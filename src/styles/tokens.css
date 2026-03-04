@@ -1,0 +1,81 @@
+:root {
+    /* Colors */
+    --color-bg: #050505;
+    --color-surface: rgba(255, 255, 255, 0.05);
+    --color-surface-hover: rgba(255, 255, 255, 0.1);
+    --color-text-primary: #ffffff;
+    --color-text-secondary: #a0a0a0;
+    --color-accent: #0044ff;
+    /* Vibrant Navy Blue */
+    --color-accent-glow: rgba(0, 68, 255, 0.5);
+
+    /* Base numeric hue for Houdini Particle Worklet */
+    --particle-hue: 224;
+    /* Vibrant Navy Blue */
+
+    /* Typography */
+    --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-display: 'Outfit', sans-serif;
+
+    /* Spacing */
+    --spacing-xs: 0.5rem;
+    --spacing-sm: 1rem;
+    --spacing-md: 2rem;
+    --spacing-lg: 4rem;
+    --spacing-xl: 8rem;
+
+    /* Animation */
+    --transition-fast: 200ms ease;
+    --transition-medium: 400ms ease;
+
+    /* Houdini & Particles Defaults */
+    --ring-radius: 570;
+    /* Max Cloud Radius - reduced to make the ring less massive */
+    --ring-thickness: 0;
+    /* Increased count and rows for a beautifully organized, dense ring */
+    --particle-count: 600;
+    --particle-rows: 45;
+    --particle-color: var(--color-accent);
+    --particle-size: 3;
+    /* Adjusted size slightly down to accompany increased density */
+    --animation-tick: 0;
+}
+
+body.light-mode {
+    --color-bg: #e0e0e0;
+    --color-surface: rgba(255, 255, 255, 0.4);
+    --color-surface-hover: rgba(255, 255, 255, 0.6);
+    --color-text-primary: #1d1d1f;
+    --color-text-secondary: #4a4a4a;
+    --color-accent: #0022aa;
+    /* Slightly deeper navy for light mode */
+    --color-accent-glow: rgba(0, 34, 170, 0.3);
+    --particle-hue: 228;
+    /* Deep Navy Blue matching light mode --color-accent */
+}
+
+@media (prefers-color-scheme: light) {
+    /* We are controlling this via class now, but could default here */
+}
+
+/* Global Reset */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    font-family: var(--font-primary);
+    line-height: 1.5;
+    overflow-x: hidden;
+}
+
+html {
+    scroll-behavior: smooth;
+    height: 100%;
+}
