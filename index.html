@@ -65,8 +65,18 @@
             <section id="about" class="snap-section about">
                 <div class="content">
                     <h2>About Me</h2>
-                    <p>Transforming ideas into scalable, reliable infrastructure solutions while empowering the next
-                        generation of tech professionals.</p>
+
+                    <div class="about-narrative"
+                        style="max-width: 800px; margin: 0 auto 2rem; text-align: left; font-size: 1.15rem; color: var(--color-text-secondary); line-height: 1.8;">
+                        <p style="margin-bottom: 1rem;"><strong style="color: var(--color-text-primary);">I build the
+                                engines that keep the cloud running.</strong> As a passionate DevOps Engineer and Cloud
+                            Architect, my obsession is turning chaotic, manual deployments into sleek, automated,
+                            zero-downtime pipelines.</p>
+                        <p>From bare-metal Linux administration to architecting highly available Kubernetes clusters on
+                            AWS, I thrive in the space where development meets operations. When I'm not writing
+                            Terraform scripts or tightening security protocols, I'm mentoring the next wave of engineers
+                            to build a more resilient digital world.</p>
+                    </div>
 
                     <div class="cert-badge">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -227,21 +237,32 @@
             <section id="work" class="snap-section work">
                 <div class="content">
                     <h2>Selected Work</h2>
+                    <p style="color: var(--color-text-secondary); margin-bottom: 2rem;">Explore my open-source tools and
+                        infrastructure code.</p>
                     <div class="project-gallery">
-                        <article class="project-card">
-                            <h3>E-Commerce Scaling</h3>
-                            <p>Auto-scaling AWS Kubernetes cluster capable of handling massive dynamic traffic loads.
-                            </p>
-                        </article>
-                        <article class="project-card">
-                            <h3>Zero-Downtime Pipeline</h3>
-                            <p>A unified GitLab CI/CD architecture to fully automate multi-environment deployments.</p>
-                        </article>
-                        <article class="project-card">
-                            <h3>Hybrid-Cloud Security</h3>
-                            <p>Hardened VPN integration bridging on-premise infrastructure with Azure cloud services.
-                            </p>
-                        </article>
+                        <a href="https://github.com/SreejuZzz/devops-tasks" target="_blank"
+                            style="text-decoration: none;" class="project-card">
+                            <h3>devops-tasks</h3>
+                            <p>A comprehensive collection of DevOps automation scripts, CI/CD pipeline configurations,
+                                and infrastructure-as-code snippets.</p>
+                            <div class="tech-stack" style="margin-top: 1rem;"><span>DevOps</span><span>Automation</span>
+                            </div>
+                        </a>
+                        <a href="https://github.com/SreejuZzz/linux-tasks" target="_blank"
+                            style="text-decoration: none;" class="project-card">
+                            <h3>linux-tasks</h3>
+                            <p>Advanced Linux administration scripts, secure server configurations, and system tuning
+                                utilities.</p>
+                            <div class="tech-stack" style="margin-top: 1rem;"><span>Linux</span><span>SysAdmin</span>
+                            </div>
+                        </a>
+                        <a href="https://github.com/SreejuZzz/shell" target="_blank" style="text-decoration: none;"
+                            class="project-card">
+                            <h3>shell</h3>
+                            <p>Custom Bash and Shell scripts designed to automate daily infrastructure operations and
+                                deployment workflows.</p>
+                            <div class="tech-stack" style="margin-top: 1rem;"><span>Shell</span><span>Bash</span></div>
+                        </a>
                     </div>
                 </div>
             </section>
