@@ -382,59 +382,7 @@
     line-height: 1.5;
 }
 
-/* Grid Spans */
-.featured-card {
-    grid-column: span 2;
-    grid-row: span 2;
-    background: linear-gradient(145deg, rgba(0, 68, 255, 0.05) 0%, rgba(0, 0, 0, 0.4) 100%);
-    border: 1px solid rgba(0, 68, 255, 0.3);
-}
-
-.featured-card .bento-body h3 {
-    font-size: 2.2rem;
-}
-
-.featured-card .bento-body h4 {
-    font-size: 1.2rem;
-}
-
-.tall-card {
-    grid-row: span 2;
-}
-
-.wide-card {
-    grid-column: span 2;
-}
-
 /* Bento Hover overrides */
-.bento-card:hover {
-    transform: translateY(-8px) scale(1.02);
-    border-color: rgba(0, 68, 255, 0.4);
-    box-shadow: 0 15px 40px rgba(0, 68, 255, 0.2);
-}
-
-@media (max-width: 900px) {
-    .bento-experience {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .featured-card {
-        grid-column: span 2;
-    }
-}
-
-@media (max-width: 600px) {
-    .bento-experience {
-        grid-template-columns: 1fr;
-    }
-
-    .featured-card,
-    .tall-card,
-    .wide-card {
-        grid-column: span 1;
-        grid-row: span 1;
-    }
-}
 
 /* Header */
 .main-header {
