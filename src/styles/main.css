@@ -21,6 +21,12 @@
     /* Ample padding so fixed header never overlaps */
 }
 
+@media (max-width: 768px) {
+    .snap-section {
+        padding: 110px var(--spacing-md) 60px;
+    }
+}
+
 /* Houdini Particles Background */
 .particles-bg {
     position: fixed;
@@ -240,13 +246,30 @@
     position: relative;
     width: 90%;
     max-width: 750px;
-    /* Increased from 650px for more internal breathing room */
     height: 520px;
     display: flex;
     justify-content: center;
     align-items: center;
     transform-style: preserve-3d;
     margin-top: 5vh;
+}
+
+@media (max-width: 768px) {
+    .traverse-container {
+        height: 480px;
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .traverse-container {
+        height: 520px;
+        /* Give slightly more vertical breathing room on very narrow phones where text wraps heavily */
+    }
+
+    .traverse-title {
+        top: 10%;
+    }
 }
 
 .traverse-card {
@@ -425,6 +448,90 @@ nav {
 
 .nav-links a:hover {
     color: var(--color-accent);
+}
+
+/* Hamburger Icon */
+.hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 24px;
+    height: 18px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    z-index: 101;
+}
+
+.hamburger .bar {
+    width: 100%;
+    height: 2px;
+    background-color: var(--color-text-primary);
+    border-radius: 4px;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform-origin: left center;
+}
+
+/* Hamburger Animation */
+.hamburger.active .bar:nth-child(1) {
+    transform: rotate(45deg);
+    width: 26px;
+}
+
+.hamburger.active .bar:nth-child(2) {
+    opacity: 0;
+    transform: translateX(20px);
+}
+
+.hamburger.active .bar:nth-child(3) {
+    transform: rotate(-45deg);
+    width: 26px;
+}
+
+/* Mobile Navigation */
+@media (max-width: 768px) {
+    .hamburger {
+        display: flex;
+    }
+
+    .nav-links {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(25px);
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 2.5rem;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(-20px) scale(0.98);
+        transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        z-index: 100;
+        margin: 0;
+        padding: 0;
+    }
+
+    .nav-links.active {
+        opacity: 1;
+        pointer-events: all;
+        transform: translateY(0) scale(1);
+    }
+
+    .nav-links a {
+        font-size: 1.5rem;
+        font-weight: 600;
+        letter-spacing: 1px;
+    }
+
+    .theme-toggle {
+        margin-top: 2rem;
+        transform: scale(1.5);
+    }
 }
 
 .theme-toggle {
@@ -716,5 +823,45 @@ body.light-mode .theme-toggle .moon-icon {
         width: 150px;
         height: 150px;
         border-width: 15px;
+    }
+
+    .portal-content h2 {
+        font-size: 2rem;
+    }
+
+    .social-btn {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .portal-wrapper {
+        width: 240px;
+        height: 240px;
+    }
+
+    .portal-ring.ring-outer {
+        width: 230px;
+        height: 230px;
+        border-width: 15px;
+    }
+
+    .portal-ring.ring-middle {
+        width: 180px;
+        height: 180px;
+        border-width: 8px;
+        border-top-width: 8px;
+        border-bottom-width: 8px;
+    }
+
+    .portal-ring.ring-inner {
+        width: 120px;
+        height: 120px;
+        border-width: 12px;
+    }
+
+    .portal-content h2 {
+        font-size: 1.75rem;
     }
 }

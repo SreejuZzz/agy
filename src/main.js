@@ -9,7 +9,10 @@ if ('paintWorklet' in CSS) {
 
 // Animation Loop for Particles
 let tick = 0;
-const tickSpeed = 0.3;
+// We target an optimal baseline tick increase roughly equivalent to 0.3 units per frame at 60fps (~16.6ms).
+// 0.3 / 16.6ms = 0.018 tick units per real-world millisecond
+const tickPerMs = 0.018;
+let lastTime = 0;
 
 // State for Ring Position
 let mouseX = window.innerWidth / 2;
@@ -29,8 +32,16 @@ function lerp(start, end, amt) {
 
 const particlesBg = document.querySelector('.particles-bg');
 
-function animate() {
-    tick += tickSpeed;
+function animate(currentTime) {
+    // Standardize delta time initialization
+    if (!lastTime) lastTime = currentTime;
+    const deltaTime = currentTime - lastTime;
+    lastTime = currentTime;
+
+    // Dynamically increase tick based on actual elapsed milliseconds
+    // This allows 60fps, 90fps, 120fps, and 165fps to all play at the EXACT same visual speed!
+    // The engine organically inserts more frames for the higher refresh rate monitors.
+    tick += deltaTime * tickPerMs;
 
     if (particlesBg) {
         // Tick always updates
@@ -38,6 +49,7 @@ function animate() {
 
         // Only update and write Ring DOM properties if the ring is physically moving to the mouse
         if (Math.abs(ringX - mouseX) > 0.1 || Math.abs(ringY - mouseY) > 0.1) {
+            // Apply standard interpolation
             ringX = lerp(ringX, mouseX, 0.012);
             ringY = lerp(ringY, mouseY, 0.012);
 
@@ -75,8 +87,34 @@ document.addEventListener('mousemove', (e) => {
     mouseY = e.clientY;
 }, { passive: true });
 
-animate();
+// Start animation passing initial performance.now()
+requestAnimationFrame(animate);
 
+
+// Mobile Navigation Toggle Logic
+const hamburger = document.getElementById('hamburger');
+const navLinks = document.getElementById('nav-links');
+
+if (hamburger && navLinks) {
+    hamburger.addEventListener('click', () => {
+        const isActive = navLinks.classList.toggle('active');
+        hamburger.classList.toggle('active');
+        hamburger.setAttribute('aria-expanded', isActive);
+
+        // Prevent background scrolling when menu is open
+        document.body.style.overflow = isActive ? 'hidden' : '';
+    });
+
+    // Close mobile menu when clicking any link inside it
+    navLinks.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+            navLinks.classList.remove('active');
+            hamburger.classList.remove('active');
+            hamburger.setAttribute('aria-expanded', 'false');
+            document.body.style.overflow = '';
+        });
+    });
+}
 
 // Theme Toggle Logic
 const themeBtn = document.getElementById('theme-toggle');

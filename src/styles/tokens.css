@@ -94,6 +94,22 @@ body.light-mode {
     /* We are controlling this via class now, but could default here */
 }
 
+/* Mobile Responsive Variable Scaling */
+@media (max-width: 768px) {
+    :root {
+        --spacing-md: 1.2rem;
+        --spacing-lg: 2rem;
+        --spacing-xl: 4rem;
+
+        /* Optimize Particles for Mobile Performance */
+        /* Heavily target mobile GPU by slashing total paths needed */
+        --ring-radius: 350;
+        --particle-count: 300;
+        --particle-rows: 25;
+        --particle-size: 2.5;
+    }
+}
+
 /* Global Reset */
 *,
 *::before,
