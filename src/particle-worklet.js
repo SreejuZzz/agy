@@ -6,12 +6,9 @@
   - Depth: Perspective Projection (Scaling size and opacity)
 */
 
-
-
 function lerp(start, end, amt) {
     return (1 - amt) * start + amt * end;
 }
-
 
 registerPaint("ring-particles", class {
     static get inputProperties() {

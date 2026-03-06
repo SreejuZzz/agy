@@ -1,3 +1,39 @@
+@property --color-surface {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: rgba(255, 255, 255, 0.05);
+}
+
+@property --color-surface-hover {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: rgba(255, 255, 255, 0.1);
+}
+
+@property --color-text-primary {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: #ffffff;
+}
+
+@property --color-text-secondary {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: #a0a0a0;
+}
+
+@property --color-accent {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: #0044ff;
+}
+
+@property --color-accent-glow {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: rgba(0, 68, 255, 0.5);
+}
+
 :root {
     /* Colors */
     --color-bg: #050505;
@@ -73,6 +109,14 @@ body {
     font-family: var(--font-primary);
     line-height: 1.5;
     overflow-x: hidden;
+    transition:
+        --color-surface 0.8s ease,
+        --color-surface-hover 0.8s ease,
+        --color-text-primary 0.8s ease,
+        --color-text-secondary 0.8s ease,
+        --color-accent 0.8s ease,
+        --color-accent-glow 0.8s ease,
+        color 0.8s ease;
 }
 
 html {
