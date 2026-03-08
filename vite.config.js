@@ -7,6 +7,9 @@ export default defineConfig({
         cssMinify: true,
         cssCodeSplit: true,
         sourcemap: false,
-        target: 'es2020',
+        target: 'esnext',
     },
+    esbuild: {
+        drop: ['console', 'debugger'],
+    }
 })
