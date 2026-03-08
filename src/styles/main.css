@@ -30,7 +30,6 @@
 /* Houdini Particles Background */
 .particles-bg {
     position: fixed;
-    /* Fixed so it stays put while scrolling */
     top: 0;
     left: 0;
     width: 100vw;
@@ -38,22 +37,13 @@
     background-image: paint(ring-particles);
     z-index: -1;
 
-    /* CRITICAL PERFORMANCE OPTIMIZATIONS: */
+    /* Performance: isolate layout/paint + GPU composite layer */
     contain: strict;
-    /* Completely isolates layout and paint from the rest of the document */
     will-change: transform;
-    /* Forces this heavy background into its own GPU composite layer */
 
-    /* Map custom properties to tokens */
-    --ring-radius: var(--ring-radius);
-    --ring-thickness: var(--ring-thickness);
-    --particle-count: var(--particle-count);
     --particle-color: var(--color-accent);
-    --particle-size: var(--particle-size);
 
-    /* Animate properties based on scroll */
-    transition:
-        --ring-radius 0.5s ease;
+    transition: --ring-radius 0.5s ease;
 }
 
 /* Register Custom Properties so we can animate them */
@@ -117,9 +107,7 @@
     }
 }
 
-/* Scroll-Driven Animations */
-/* Scroll-Driven Animations */
-/* Animate elements as they enter the view */
+/* Scroll-Driven Animations — animate elements as they enter the view */
 .card,
 .project-card,
 .bento-card {
@@ -203,7 +191,7 @@
 
 /* Z-Axis Traverse Experience Section */
 .traverse-section {
-    height: 900vh;
+    height: 1500vh;
     /* Scaled up for 6 experience cards to maintain the exact same perfect plunge tempo */
     position: relative;
     width: 100%;
@@ -276,8 +264,6 @@
     position: absolute;
     width: 100%;
     height: 100%;
-    /* Fill the container */
-    /* Beautiful glass look for the cards, now adaptive to theme! */
     background: var(--color-surface);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -285,18 +271,12 @@
     border-radius: 20px;
     padding: var(--spacing-lg);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-    /* Slightly softer shadow */
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-
-    /* GPU HARDWARE ACCELERATION: Force the browser to optimize these heavy properties */
-    will-change: transform, opacity, filter, z-index;
-
-    /* VERY IMPORTANT for the Plunge effect: */
     transform-origin: center center;
 
-    /* Hardware acceleration and disable CSS animations to prevent fighting with JS */
+    /* GPU acceleration + disable CSS animations to prevent fighting with JS */
     will-change: transform, opacity, filter;
     animation: none !important;
 }
@@ -406,6 +386,33 @@
 }
 
 /* Bento Hover overrides */
+
+/* Key Achievements in Career Cards */
+.key-achievements {
+    list-style: none;
+    margin: 0.75rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.key-achievements li {
+    position: relative;
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    padding-left: 1.25rem;
+    line-height: 1.5;
+}
+
+.key-achievements li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--color-accent);
+    font-size: 0.9rem;
+    font-weight: 700;
+}
 
 /* Header */
 .main-header {
@@ -586,7 +593,7 @@ body.light-mode .theme-toggle .moon-icon {
 }
 
 
-/* Scroll Indocator */
+/* Scroll Indicator */
 .scroll-indicator {
     margin-top: var(--spacing-xl);
     opacity: 0.7;
@@ -864,4 +871,44 @@ body.light-mode .theme-toggle .moon-icon {
     .portal-content h2 {
         font-size: 1.75rem;
     }
+}
+
+/* =========================================
+   Utility Classes (moved from inline styles)
+   ========================================= */
+
+.about-narrative {
+    max-width: 800px;
+    margin: 0 auto 2rem;
+    text-align: left;
+    font-size: 1.15rem;
+    color: var(--color-text-secondary);
+    line-height: 1.8;
+}
+
+.about-narrative p {
+    margin-bottom: 1rem;
+}
+
+.about-narrative strong {
+    color: var(--color-text-primary);
+}
+
+.work-subtitle {
+    color: var(--color-text-secondary);
+    margin-bottom: 2rem;
+}
+
+.project-card {
+    text-decoration: none;
+}
+
+.project-tech {
+    margin-top: 1rem;
+}
+
+/* Section paint isolation */
+.about,
+.work {
+    contain: content;
 }

@@ -90,10 +90,6 @@ body.light-mode {
     /* Deep Navy Blue matching light mode --color-accent */
 }
 
-@media (prefers-color-scheme: light) {
-    /* We are controlling this via class now, but could default here */
-}
-
 /* Mobile Responsive Variable Scaling */
 @media (max-width: 768px) {
     :root {

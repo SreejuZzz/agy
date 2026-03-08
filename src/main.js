@@ -3,59 +3,59 @@ import './styles/main.css';
 
 // Register Paint Worklet
 if ('paintWorklet' in CSS) {
-    // Remove development cache bypass for production performance
     CSS.paintWorklet.addModule(new URL('./particle-worklet.js', import.meta.url));
 }
 
-// Animation Loop for Particles
+// ─── Animation Loop for Particles ───
 let tick = 0;
-// We target an optimal baseline tick increase roughly equivalent to 0.3 units per frame at 60fps (~16.6ms).
-// 0.3 / 16.6ms = 0.018 tick units per real-world millisecond
+// 0.3 units/frame at 60fps (~16.6ms) → 0.018 tick units per millisecond
 const tickPerMs = 0.018;
 let lastTime = 0;
 
-// State for Ring Position
+// Ring position state
 let mouseX = window.innerWidth / 2;
 let mouseY = window.innerHeight / 2;
 let ringX = mouseX;
 let ringY = mouseY;
 
-// Caching values to avoid redundant CSS variable DOM writes
+// Cache values to avoid redundant CSS variable DOM writes
 let lastMouseX = -1;
 let lastMouseY = -1;
 let lastRingX = -1;
 let lastRingY = -1;
 
+// Frame-rate-independent lerp
 function lerp(start, end, amt) {
     return (1 - amt) * start + amt * end;
 }
 
 const particlesBg = document.querySelector('.particles-bg');
 
+// Lerp smoothing constant — designed for 60fps baseline
+const LERP_BASE = 0.012;
+const LERP_FRAME_MS = 16.667; // 60fps reference frame time
+
+let animationId = null;
+
 function animate(currentTime) {
-    // Standardize delta time initialization
     if (!lastTime) lastTime = currentTime;
     const deltaTime = currentTime - lastTime;
     lastTime = currentTime;
 
-    // Dynamically increase tick based on actual elapsed milliseconds
-    // This allows 60fps, 90fps, 120fps, and 165fps to all play at the EXACT same visual speed!
-    // The engine organically inserts more frames for the higher refresh rate monitors.
+    // Delta-time tick: identical visual speed at 60/90/120/165Hz
     tick += deltaTime * tickPerMs;
 
     if (particlesBg) {
-        // Tick always updates
         particlesBg.style.setProperty('--animation-tick', tick.toString());
 
-        // Only update and write Ring DOM properties if the ring is physically moving to the mouse
+        // Frame-rate-independent lerp: 1 - (1-base)^(dt/16.667)
         if (Math.abs(ringX - mouseX) > 0.1 || Math.abs(ringY - mouseY) > 0.1) {
-            // Apply standard interpolation
-            ringX = lerp(ringX, mouseX, 0.012);
-            ringY = lerp(ringY, mouseY, 0.012);
+            const lerpAmt = 1 - Math.pow(1 - LERP_BASE, deltaTime / LERP_FRAME_MS);
+            ringX = lerp(ringX, mouseX, lerpAmt);
+            ringY = lerp(ringY, mouseY, lerpAmt);
 
-            // Round precision to 1 decimal to avoid microscopic float updates
-            let roundRingX = Math.round(ringX * 10) / 10;
-            let roundRingY = Math.round(ringY * 10) / 10;
+            const roundRingX = Math.round(ringX * 10) / 10;
+            const roundRingY = Math.round(ringY * 10) / 10;
 
             if (roundRingX !== lastRingX) {
                 particlesBg.style.setProperty('--ring-x', roundRingX.toString());
@@ -67,7 +67,6 @@ function animate(currentTime) {
             }
         }
 
-        // Only update and write Mouse DOM properties when cursor actively moves
         if (mouseX !== lastMouseX) {
             particlesBg.style.setProperty('--mouse-x-instant', mouseX.toString());
             lastMouseX = mouseX;
@@ -78,20 +77,33 @@ function animate(currentTime) {
         }
     }
 
-    requestAnimationFrame(animate);
+    animationId = requestAnimationFrame(animate);
 }
 
-// Mouse Tracking for Interaction - Set to passive for performance
+// Passive mouse tracking
 document.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
 }, { passive: true });
 
-// Start animation passing initial performance.now()
-requestAnimationFrame(animate);
+// Pause animation when tab is hidden to save CPU/GPU
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+    } else {
+        lastTime = 0; // Reset so delta doesn't spike
+        animationId = requestAnimationFrame(animate);
+    }
+});
+
+// Start animation
+animationId = requestAnimationFrame(animate);
 
 
-// Mobile Navigation Toggle Logic
+// ─── Mobile Navigation Toggle ───
 const hamburger = document.getElementById('hamburger');
 const navLinks = document.getElementById('nav-links');
 
@@ -100,12 +112,9 @@ if (hamburger && navLinks) {
         const isActive = navLinks.classList.toggle('active');
         hamburger.classList.toggle('active');
         hamburger.setAttribute('aria-expanded', isActive);
-
-        // Prevent background scrolling when menu is open
         document.body.style.overflow = isActive ? 'hidden' : '';
     });
 
-    // Close mobile menu when clicking any link inside it
     navLinks.querySelectorAll('a').forEach(link => {
         link.addEventListener('click', () => {
             navLinks.classList.remove('active');
@@ -116,228 +125,226 @@ if (hamburger && navLinks) {
     });
 }
 
-// Theme Toggle Logic
+// ─── Theme Toggle ───
 const themeBtn = document.getElementById('theme-toggle');
 if (themeBtn) {
-    themeBtn.addEventListener('click', (e) => {
+    themeBtn.addEventListener('click', () => {
         const isDark = !document.body.classList.contains('light-mode');
-
-        // Target colors based on our design tokens
         const oldColor = isDark ? '#050505' : '#e0e0e0';
         const targetColor = isDark ? '#e0e0e0' : '#050505';
 
-        // Get the accurate center position of the theme button
         const rect = themeBtn.getBoundingClientRect();
         const x = rect.left + rect.width / 2;
         const y = rect.top + rect.height / 2;
 
-        // Calculate the distance to the furthest corner
         const endRadius = Math.hypot(
             Math.max(x, innerWidth - x),
             Math.max(y, innerHeight - y)
         );
 
-        // Create the ripple DOM element
         const ripple = document.createElement('div');
         ripple.className = 'theme-ripple';
-
-        // The expanding ripple color should be the target mode's background
         ripple.style.backgroundColor = targetColor;
         document.body.appendChild(ripple);
-
-        // Lock the body background to the old color so it doesn't instantly jump
         document.body.style.backgroundColor = oldColor;
 
-        // Toggle the theme class *now* so text variables start their smooth CSS transitions immediately
         document.body.classList.toggle('light-mode');
         localStorage.setItem('theme', isDark ? 'light' : 'dark');
 
-        // Since the ripple covers the screen in the *new* color, 
-        // we start it at 0px and grow it.
         const animation = ripple.animate(
             [
                 { clipPath: `circle(0px at ${x}px ${y}px)` },
                 { clipPath: `circle(${endRadius}px at ${x}px ${y}px)` }
             ],
-            {
-                duration: 800,
-                easing: 'ease-in-out',
-                fill: 'forwards'
-            }
+            { duration: 800, easing: 'ease-in-out', fill: 'forwards' }
         );
 
-        // Wait for the ripple to fully cover the screen, then instantly swap the 
-        // real background/theme underneath, and remove the ripple.
         animation.onfinish = () => {
-            document.body.style.backgroundColor = ''; // Unlock fallback bg
+            document.body.style.backgroundColor = '';
             ripple.remove();
         };
     });
 
-    // Load saved theme
     if (localStorage.getItem('theme') === 'light') {
         document.body.classList.add('light-mode');
     }
 }
 
-// Z-Axis Experience Scroll
+// ─── Z-Axis Experience Scroll + Portal ───
 const traverseSection = document.getElementById('experience');
+const portalSection = document.getElementById('portal-contact');
+
+// Traverse setup
+let traverseTicking = false;
+let isTraverseVisible = false;
+let cards = null;
+
 if (traverseSection) {
-    const cards = traverseSection.querySelectorAll('.traverse-card');
-
-    const updateTraverse = () => {
-        // Cache window height to avoid layout thrashing
-        const windowHeight = window.innerHeight;
-        const rect = traverseSection.getBoundingClientRect();
-        // Scrollable area = total height minus one viewport
-        const scrollable = traverseSection.offsetHeight - windowHeight;
-
-        // Progress from 0 to 1
-        let progress = -rect.top / scrollable;
-        progress = Math.max(0, Math.min(1, progress));
-
-        cards.forEach((card, index) => {
-            const diff = (progress * (cards.length - 1)) - index;
-            const absDiff = Math.abs(diff);
-
-            let scale, opacity, zIndex, blur;
-
-            if (diff > 0) {
-                // Card has been scrolled PAST
-                // Create a "dead zone" of 0.15 where the card remains perfectly still and readable
-                const pastDiff = Math.max(0, diff - 0.15);
-                scale = 1 + Math.pow(pastDiff, 2.5) * 15;
-                opacity = 1 - (pastDiff * 4); // Fade out extremely fast once it leaves the dead zone
-                blur = Math.min(pastDiff * 25, 12);
-                zIndex = cards.length - index + 10;
-            } else {
-                // Card is coming BEHIND from the distance
-                const comingDiff = Math.max(0, absDiff - 0.15);
-                scale = Math.max(0.01, 1 - Math.pow(comingDiff, 1.2) * 0.4);
-                // Heavy fade so background cards do not bleed through the glass
-                opacity = 1 - (comingDiff * 1.5);
-                blur = Math.min(comingDiff * 8, 12);
-                zIndex = cards.length - index;
-            }
-
-            opacity = Math.max(0, Math.min(1, opacity));
-
-            // CRITICAL PERFORMANCE FIX: Stop rendering elements that are fully invisible.
-            if (opacity <= 0.01) {
-                card.style.visibility = 'hidden';
-            } else {
-                card.style.visibility = 'visible';
-                card.style.transform = `scale(${scale})`;
-                card.style.opacity = opacity;
-                card.style.zIndex = zIndex;
-                card.style.filter = `blur(${Math.max(0, blur)}px) brightness(${Math.max(0.1, 1 - absDiff * 0.8)})`;
-            }
-        });
-    };
-
-    let traverseTicking = false;
-    let isTraverseVisible = false;
+    cards = traverseSection.querySelectorAll('.traverse-card');
 
     const traverseObserver = new IntersectionObserver((entries) => {
         isTraverseVisible = entries[0].isIntersecting;
     }, { rootMargin: '1000px 0px' });
-
     traverseObserver.observe(traverseSection);
-
-    window.addEventListener('scroll', () => {
-        if (!isTraverseVisible) return;
-
-        if (!traverseTicking) {
-            window.requestAnimationFrame(() => {
-                updateTraverse();
-                traverseTicking = false;
-            });
-            traverseTicking = true;
-        }
-    }, { passive: true });
-
-    window.addEventListener('resize', () => {
-        window.requestAnimationFrame(updateTraverse);
-    }, { passive: true });
 
     // Initial calculation
     updateTraverse();
 }
 
-// Card Mouse Tracking for Glow Effect
+// Portal setup
+let portalTicking = false;
+let isPortalVisible = false;
+let portalWrapper = null;
+let portalContent = null;
+
+if (portalSection) {
+    portalWrapper = portalSection.querySelector('.portal-wrapper');
+    portalContent = portalSection.querySelector('.portal-content');
+
+    const portalObserver = new IntersectionObserver((entries) => {
+        isPortalVisible = entries[0].isIntersecting;
+    }, { rootMargin: '1000px 0px' });
+    portalObserver.observe(portalSection);
+
+    updatePortal();
+}
+
+function updateTraverse() {
+    const windowHeight = window.innerHeight;
+    const rect = traverseSection.getBoundingClientRect();
+    const scrollable = traverseSection.offsetHeight - windowHeight;
+
+    let rawProgress = -rect.top / scrollable;
+    rawProgress = Math.max(0, Math.min(1, rawProgress));
+
+    // Staircase progress: create a "pause" plateau at each card's readable state.
+    // Each card gets an equal segment of the raw scroll. Within each segment:
+    //   - First 30%: smooth transition IN (cubic ease)
+    //   - Middle 40%: flat plateau (card is perfectly readable, progress frozen)
+    //   - Last 30%: smooth transition OUT (cubic ease)
+    const cardCount = cards.length;
+    const n = cardCount;
+    const segmentSize = 1 / n; // Each card owns 1/n of the total scroll
+
+    // Map raw linear progress → staircase progress with plateaus
+    const segmentIndex = Math.min(Math.floor(rawProgress / segmentSize), n - 1);
+    const segmentProgress = (rawProgress - segmentIndex * segmentSize) / segmentSize;
+
+    const transIn = 0.30;  // 30% transition in
+    const plateau = 0.40;  // 40% readable pause
+    const transOut = 0.30;  // 30% transition out
+
+    let mappedSegmentValue;
+    if (segmentProgress <= transIn) {
+        // Ease-in: cubic from 0 → 1 over the transition-in zone
+        const t = segmentProgress / transIn;
+        mappedSegmentValue = t * t * (3 - 2 * t); // smoothstep
+    } else if (segmentProgress <= transIn + plateau) {
+        // Plateau: frozen at 1 (card is fully readable)
+        mappedSegmentValue = 1;
+    } else {
+        // Ease-out: cubic from 1 → 2 over the transition-out zone
+        const t = (segmentProgress - transIn - plateau) / transOut;
+        mappedSegmentValue = 1 + t * t * (3 - 2 * t);
+    }
+
+    // Final progress maps each card from index 0 to (n-1)
+    const progress = (segmentIndex + mappedSegmentValue * 0.5) / (n - 1 || 1);
+    const clampedProgress = Math.max(0, Math.min(1, progress));
+
+    for (let i = 0; i < cardCount; i++) {
+        const card = cards[i];
+        const diff = (clampedProgress * (cardCount - 1)) - i;
+        const absDiff = Math.abs(diff);
+
+        let scale, opacity, zIndex, blur;
+
+        if (diff > 0) {
+            const pastDiff = Math.max(0, diff - 0.15);
+            scale = 1 + Math.pow(pastDiff, 2.5) * 15;
+            opacity = 1 - (pastDiff * 4);
+            blur = Math.min(pastDiff * 25, 12);
+            zIndex = cardCount - i + 10;
+        } else {
+            const comingDiff = Math.max(0, absDiff - 0.15);
+            scale = Math.max(0.01, 1 - Math.pow(comingDiff, 1.2) * 0.4);
+            opacity = 1 - (comingDiff * 1.5);
+            blur = Math.min(comingDiff * 8, 12);
+            zIndex = cardCount - i;
+        }
+
+        opacity = Math.max(0, Math.min(1, opacity));
+
+        if (opacity <= 0.01) {
+            card.style.visibility = 'hidden';
+        } else {
+            card.style.visibility = 'visible';
+            card.style.transform = `scale(${scale})`;
+            card.style.opacity = opacity;
+            card.style.zIndex = zIndex;
+            card.style.filter = `blur(${Math.max(0, blur)}px) brightness(${Math.max(0.1, 1 - absDiff * 0.8)})`;
+        }
+    }
+}
+
+function updatePortal() {
+    const rect = portalSection.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
+
+    let progress = (windowHeight - rect.top) / windowHeight;
+    progress = Math.max(0, Math.min(1, progress - 0.2));
+
+    const easedProgress = Math.pow(progress, 2);
+    const rotateX = easedProgress * 75;
+    const scale = 1 - (easedProgress * 0.2);
+
+    portalWrapper.style.transform = `rotateX(${rotateX}deg) scale(${scale})`;
+
+    if (progress > 0.8) {
+        portalContent.classList.add('active');
+    } else {
+        portalContent.classList.remove('active');
+    }
+}
+
+// ─── Consolidated scroll listener ───
+window.addEventListener('scroll', () => {
+    if (isTraverseVisible && !traverseTicking) {
+        requestAnimationFrame(() => {
+            updateTraverse();
+            traverseTicking = false;
+        });
+        traverseTicking = true;
+    }
+    if (isPortalVisible && !portalTicking) {
+        requestAnimationFrame(() => {
+            updatePortal();
+            portalTicking = false;
+        });
+        portalTicking = true;
+    }
+}, { passive: true });
+
+// ─── Consolidated resize listener ───
+window.addEventListener('resize', () => {
+    requestAnimationFrame(() => {
+        if (traverseSection) updateTraverse();
+        if (portalSection) updatePortal();
+    });
+}, { passive: true });
+
+// ─── Card Mouse Tracking for Glow Effect ───
 document.querySelectorAll('.bento-card, .traverse-card').forEach(card => {
     let mouseTicking = false;
     card.addEventListener('mousemove', e => {
         if (!mouseTicking) {
-            window.requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
                 const rect = card.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                card.style.setProperty('--mouse-x', `${x}px`);
-                card.style.setProperty('--mouse-y', `${y}px`);
+                card.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+                card.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
                 mouseTicking = false;
             });
             mouseTicking = true;
         }
     });
 });
-
-// Igloo.inc 3D Rays Portal Animation
-const portalSection = document.getElementById('portal-contact');
-if (portalSection) {
-    const portalWrapper = portalSection.querySelector('.portal-wrapper');
-    const portalContent = portalSection.querySelector('.portal-content');
-
-    const updatePortal = () => {
-        const rect = portalSection.getBoundingClientRect();
-        const windowHeight = window.innerHeight;
-
-        // Start animating when the portal comes into view
-        // The portal is 150vh, we animate over the top 50vh scroll
-        let progress = (windowHeight - rect.top) / windowHeight;
-        progress = Math.max(0, Math.min(1, progress - 0.2)); // Delay start slightly
-
-        // Cubic easing for the "flop down" effect
-        const easedProgress = Math.pow(progress, 2);
-
-        // Rotate from 0 (facing camera) to 75deg (flat pedestal)
-        const rotateX = easedProgress * 75;
-        // Scale down slightly as it lays flat to give depth
-        const scale = 1 - (easedProgress * 0.2);
-
-        portalWrapper.style.transform = `rotateX(${rotateX}deg) scale(${scale})`;
-
-        // Fade in the links when the portal has fully laid down (progress > 0.8)
-        if (progress > 0.8) {
-            portalContent.classList.add('active');
-        } else {
-            portalContent.classList.remove('active');
-        }
-    };
-
-    let portalTicking = false;
-    let isPortalVisible = false;
-
-    const portalObserver = new IntersectionObserver((entries) => {
-        isPortalVisible = entries[0].isIntersecting;
-    }, { rootMargin: '1000px 0px' });
-
-    portalObserver.observe(portalSection);
-
-    window.addEventListener('scroll', () => {
-        if (!isPortalVisible) return;
-
-        if (!portalTicking) {
-            window.requestAnimationFrame(() => {
-                updatePortal();
-                portalTicking = false;
-            });
-            portalTicking = true;
-        }
-    }, { passive: true });
-
-    window.addEventListener('resize', () => {
-        window.requestAnimationFrame(updatePortal);
-    }, { passive: true });
-    updatePortal();
-}

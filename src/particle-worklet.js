@@ -21,7 +21,7 @@ registerPaint("ring-particles", class {
             "--ring-y",
             "--mouse-x-instant",
             "--mouse-y-instant",
-            "--particle-hue" // Add dynamic theme base color input
+            "--particle-hue"
         ];
     }
 
@@ -30,163 +30,154 @@ registerPaint("ring-particles", class {
         const baseSize = parseFloat(props.get("--particle-size").toString()) || 4;
         const tick = parseFloat(props.get("--animation-tick").toString()) || 0;
 
-
-
-        // Center point with a subtle, slow global drift
-        // This ensures the ring is always floating slightly and isn't locked dead-center
         const baseY = parseFloat(props.get("--ring-y").toString()) || size.height / 2;
         const baseX = parseFloat(props.get("--ring-x").toString()) || size.width / 2;
 
-        const driftX = Math.sin(tick * 0.002) * 80;
-        const driftY = Math.cos(tick * 0.0015) * 50;
+        // Pre-compute tick-derived constants (outside particle loop)
+        const tickDrift1 = tick * 0.002;
+        const tickDrift2 = tick * 0.0015;
+        const tickTilt = tick * 0.003;
+        const tickOrbit = tick * 0.0002;
+        const tickBreath = tick * 0.01;
+        const tickSilk = tick * 0.006;
+        const tickUniform = tick * 0.05;
+        const tickWave = tick * 0.02;
+        const tickColor = tick * 0.005;
+        const tickAngleShift = tick * 0.0002;
+
+        const driftX = Math.sin(tickDrift1) * 80;
+        const driftY = Math.cos(tickDrift2) * 50;
 
         const ringX = baseX + driftX;
         const ringY = baseY + driftY;
 
-        // Mouse coordinates (Instantaneous pure bypass)
         const mouseX = parseFloat(props.get("--mouse-x-instant").toString()) || 0;
         const mouseY = parseFloat(props.get("--mouse-y-instant").toString()) || 0;
 
         const maxRadius = parseFloat(props.get("--ring-radius").toString()) || 500;
-        // Massive influence radius to stretch the entire hemisphere of the ring deeply toward the cursor
         const influenceRadius = 1000;
+        const invInfluenceRadius = 1 / influenceRadius;
+        const invMaxRadius = 1 / maxRadius;
 
-        // Define concentric rings
         const rawRows = props.get("--particle-rows");
-        const numRows = rawRows ? parseInt(rawRows.toString()) : 12; // 12 distinct rings
+        const numRows = rawRows ? parseInt(rawRows.toString()) : 12;
 
-        // Calculate proportional particle counts (fewer in inner rings, more in outer)
-        // Using Math.sqrt creates a much smoother, beautiful gradual transition in density
-        // instead of a harsh linear ramp, ensuring the outer rings don't become too sparse with fewer particles.
+        // Calculate proportional particle counts per ring (sqrt-weighted density)
         let totalWeight = 0;
         for (let r = 0; r < numRows; r++) {
             totalWeight += Math.sqrt(r + 1);
         }
+        const invTotalWeight = 1 / totalWeight;
 
-        const rowCounts = [];
+        // Build flat parallel arrays instead of object array (avoids per-particle destructuring)
+        const rowIndices = new Int32Array(count);
+        const particleInRow = new Int32Array(count);
+        const particlesPerRow = new Int32Array(count);
+        let idx = 0;
+
         for (let r = 0; r < numRows; r++) {
             const weight = Math.sqrt(r + 1);
-            rowCounts.push(Math.floor(count * (weight / totalWeight)));
-        }
-
-        const particleConfigs = [];
-        for (let r = 0; r < numRows; r++) {
-            const numP = rowCounts[r];
-            for (let p = 0; p < numP; p++) {
-                particleConfigs.push({ rowIndex: r, particleIndexInRow: p, particlesInThisRow: numP });
+            const numP = Math.floor(count * (weight * invTotalWeight));
+            for (let p = 0; p < numP && idx < count; p++) {
+                rowIndices[idx] = r;
+                particleInRow[idx] = p;
+                particlesPerRow[idx] = numP;
+                idx++;
             }
         }
+        const actualCount = idx;
 
-        // Pre-calculate perfectly uniform distances for the rings
-        const ringDistances = [];
-        const innerRadius = maxRadius * 0.25; // Clean defined hollow center
+        // Pre-compute ring distances (already sorted by construction — no sort needed)
+        const ringDistances = new Float64Array(numRows);
+        const innerRadius = maxRadius * 0.25;
+        const radiusRange = maxRadius - innerRadius;
+        const invNumRowsM1 = 1 / (numRows - 1 || 1);
         for (let r = 0; r < numRows; r++) {
-            const fraction = r / (numRows - 1 || 1);
-            ringDistances.push(innerRadius + fraction * (maxRadius - innerRadius));
+            ringDistances[r] = innerRadius + (r * invNumRowsM1) * radiusRange;
         }
-        ringDistances.sort((a, b) => a - b);
 
-        // Cache heavy math functions outside loop for performance
+        // Pre-compute tilt and uniform scale
+        const tiltAxisAngle = tickTilt;
+        const uniformScale = 1 + Math.sin(tickUniform) * 0.15;
+        const focalLength = 600;
+
+        // Cache math functions
         const mSin = Math.sin;
         const mCos = Math.cos;
 
-        for (let i = 0; i < count; i++) {
-            // --- 1. Structured Distribution & Motion ---
-            if (i >= particleConfigs.length) continue;
-            const { rowIndex, particleIndexInRow, particlesInThisRow } = particleConfigs[i];
+        const baseHue = parseFloat(props.get("--particle-hue")?.toString() || 224);
+
+        // Set lineCap once (constant across all particles)
+        ctx.lineCap = "round";
+
+        for (let i = 0; i < actualCount; i++) {
+            const rowIndex = rowIndices[i];
+            const pInRow = particleInRow[i];
+            const pCount = particlesPerRow[i];
 
             const dist = ringDistances[rowIndex];
-            const distanceFactor = 1 - (dist / maxRadius);
+            const distRatio = dist * invMaxRadius;
 
             const orbitSpeed = 0.0002;
-            const currentAngle = ((particleIndexInRow / particlesInThisRow) * Math.PI * 2) + (tick * orbitSpeed);
+            const currentAngle = ((pInRow / pCount) * Math.PI * 2) + tickOrbit;
 
-            // Perfect geometric circles
             const p1x = mCos(currentAngle) * dist;
             const p1y = mSin(currentAngle) * dist;
 
-            // Instead of a ripple, we tilt the entire ring structure slowly like a spinning galaxy or a coin.
-            // The tilt axis slowly rotates around the center.
-            const tiltAxisAngle = tick * 0.003;
+            // Tilt displacement
             const angleFromTiltAxis = currentAngle - tiltAxisAngle;
-
-            // The tilt displaces the Z axis smoothly from one side to the other.
-            // High tilt to ensure deep Z penetration without zooming the camera.
             const maxTiltZ = 350;
-            let p1z = mSin(angleFromTiltAxis) * maxTiltZ * (dist / maxRadius);
+            let p1z = mSin(angleFromTiltAxis) * maxTiltZ * distRatio;
 
-            // Add a very gentle breathing wave that sweeps across the ring
-            // This replaces the chaotic 'oceanic' waves
-            const breathingWave = mSin(dist * 0.02 - tick * 0.01) * 30;
-            p1z += breathingWave;
+            // Breathing wave
+            p1z += mSin(dist * 0.02 - tickBreath) * 30;
 
-            // Add an elegant, subtle, diagonal "silk in the breeze" wave
-            // This is a slow, sweeping motion that moves gently across the whole structure to feel more premium.
-            const windX = p1x * 0.004;
-            const windY = p1y * 0.002;
-            const silkWave = mSin(windX + windY - tick * 0.006) * 50;
-            p1z += silkWave;
+            // Silk wave
+            p1z += mSin(p1x * 0.004 + p1y * 0.002 - tickSilk) * 50;
 
-            // Dampen the depth displacement near the strictly dead center focal point
-            p1z *= dist < 80 ? (dist / 80) : 1;
+            // Dampen center
+            if (dist < 80) p1z *= dist / 80;
 
-            // Uniform Expanding & Shrinking animation (Breathe Effect)
-            const uniformScale = 1 + mSin(tick * 0.05) * 0.15;
-
-            // --- 3. Perspective Projection ---
-            // Reverted camera values to maintain the original, clean ring size globally.
-            const focalLength = 600;
+            // Perspective projection
             const zDepth = 800 + p1z;
-
             if (zDepth <= 10) continue;
-            const geometricScale = (focalLength / zDepth) * uniformScale;
 
-            // Optical scaling for volume and thickness
-            const opticalScale = focalLength / Math.max(10, zDepth);
+            const invZDepth = 1 / zDepth;
+            const geometricScale = focalLength * invZDepth * uniformScale;
+            const opticalScale = focalLength * invZDepth;
 
             let screenX = ringX + (p1x * geometricScale);
             let screenY = ringY + (p1y * geometricScale);
 
-            // --- 4. INDIVIDUAL Particle Mouse Interaction ---
+            // Mouse interaction
             const dxMouse = mouseX - screenX;
             const dyMouse = mouseY - screenY;
-            const distMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
+            const distMouseSq = dxMouse * dxMouse + dyMouse * dyMouse;
 
             let localVelocity = orbitSpeed * 1000 * opticalScale;
 
-            if (distMouse < influenceRadius) {
-                // Highly elastic, sweeping continuous gravity pull
-                // Deeper power curve creates a giant wide teardrop shape stretching heavily into the mouse
-                const force = Math.pow(1 - (distMouse / influenceRadius), 1.8);
-
-                // Pure spring-snap into the cursor. Reduced by 50% per request.
-                const pullStrength = force * 0.475; // Was 0.95, now halved for less intense rubber-banding
+            if (distMouseSq < influenceRadius * influenceRadius) {
+                const distMouse = Math.sqrt(distMouseSq);
+                const force = Math.pow(1 - (distMouse * invInfluenceRadius), 1.8);
+                const pullStrength = force * 0.475;
 
                 screenX += dxMouse * pullStrength;
                 screenY += dyMouse * pullStrength;
-                localVelocity += pullStrength * 50; // Vastly enhances visual velocity stretching thickness
+                localVelocity += pullStrength * 50;
             }
 
             const angleToCenter = Math.atan2(screenY - ringY, screenX - ringX);
 
-            // --- 5. Color & Shading ---
-            let normalizedAngle = ((angleToCenter + Math.PI) / (Math.PI * 2) + tick * 0.0002) % 1;
+            // Color & Shading
+            let normalizedAngle = ((angleToCenter + Math.PI) / (Math.PI * 2) + tickAngleShift) % 1;
             if (normalizedAngle < 0) normalizedAngle += 1;
 
-            const baseHue = parseFloat(props.get("--particle-hue")?.toString() || 224);
             let hue = baseHue + mSin(normalizedAngle * Math.PI * 2) * 15;
 
-            // --- MULTI-WAVE COLOR SPREADING ---
-            const timeSpeed = tick * 0.005;
-
-            // Wave 1: Blue (sweeps Top-Left to Bottom-Right)
-            const blueIntensity = (mSin((p1x * 0.707 + p1y * 0.707) * 0.005 - timeSpeed) + 1) / 2;
-
-            // Wave 2: Orange (sweeps Right to Left)
-            const orangeIntensity = (mSin((p1x * -1.0) * 0.006 - timeSpeed * 0.8 + 2.0) + 1) / 2;
-
-            // Wave 3: Red (sweeps Bottom-Left to Top-Right)
-            const redIntensity = (mSin((p1x * 0.707 + p1y * -0.707) * 0.004 - timeSpeed * 1.2 + 4.0) + 1) / 2;
+            // Multi-wave color spreading
+            const blueIntensity = (mSin((p1x * 0.707 + p1y * 0.707) * 0.005 - tickColor) + 1) * 0.5;
+            const orangeIntensity = (mSin(p1x * -0.006 - tickColor * 0.8 + 2.0) + 1) * 0.5;
+            const redIntensity = (mSin((p1x * 0.707 + p1y * -0.707) * 0.004 - tickColor * 1.2 + 4.0) + 1) * 0.5;
 
             const pBlue = blueIntensity * blueIntensity;
             const pOrange = orangeIntensity * orangeIntensity;
@@ -194,69 +185,54 @@ registerPaint("ring-particles", class {
 
             const maxIntensity = Math.max(pBlue, pOrange, pRed);
             if (maxIntensity === pBlue) {
-                hue = 224; // Vibrant Navy
+                hue = 224;
             } else if (maxIntensity === pOrange) {
-                hue = 25; // Vibrant Orange
+                hue = 25;
             } else {
-                hue = 355; // Vibrant Red
+                hue = 355;
             }
 
             const totalIntensity = pBlue + pOrange + pRed || 1;
 
-            // Create a shining gradient spreading from one side
-            const shineFactor = (mSin(normalizedAngle * Math.PI * 2) + 1) / 2;
+            const shineFactor = (mSin(normalizedAngle * Math.PI * 2) + 1) * 0.5;
+            const saturation = lerp(80, 100, shineFactor);
 
-            // Maintain high saturation everywhere so all 3 colors stay vibrant
-            let saturation = lerp(80, 100, shineFactor);
-
-            // Exaggerate depth fading for 3D illusion
+            // Depth fading
             const depthFactor = Math.max(0, Math.min(1, (p1z + 350) / 700));
             const alpha = lerp(0.95, 0.05, depthFactor);
 
-            // Adjust lightness for the depth (darker far away) and the shine gradient (brighter on one side)
             let baseLightness = lerp(40, 75, shineFactor);
-            // Ensure the vibrant peaks of the Red and Orange waves stay luminous
             const maxWarmIntensity = Math.max(pOrange, pRed);
             baseLightness = lerp(baseLightness, 65, maxWarmIntensity / totalIntensity);
-
-            // The 3D depth wave pushes the lightness down drastically when elements sink far backward
             const lightness = lerp(baseLightness, 5, depthFactor);
 
             ctx.strokeStyle = `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
 
-            // --- 7. Final Particle Rendering ---
-            // Allow size to gently build visual volume based strictly on depth context (opticalScale)
+            // Particle sizing
             const sizeScale = Math.min(opticalScale, 2.5);
             let lineThickness = Math.max(0.5, baseSize * sizeScale);
 
-            // Create a non-uniform shrinking wave that rolls across the ring
-            // The wave is based on the particle's angle and distance, moving over time
-            const wavePhase = (currentAngle * 2) + (dist * 0.01) - (tick * 0.02);
-            // Math.sin returns -1 to 1. We want it to be 0 to 1, where 0 is shrunk and 1 is full size
-            const waveFactor = (mSin(wavePhase) + 1) / 2;
-
-            // Apply shrinking: particles shrink to 10% of their size at the bottom of the wave
+            // Non-uniform shrinking wave
+            const wavePhase = (currentAngle * 2) + (dist * 0.01) - tickWave;
+            const waveFactor = (mSin(wavePhase) + 1) * 0.5;
             const shrinkMultiplier = lerp(0.1, 1.0, waveFactor);
-            lineThickness = lineThickness * shrinkMultiplier;
+            lineThickness *= shrinkMultiplier;
 
-            // Add slight gentle expansion based strictly on local fluid velocity
             const expansionBonus = Math.min(localVelocity * 0.05, 1.5) * shrinkMultiplier;
             const finalThickness = lineThickness + expansionBonus;
 
-            ctx.save();
-            ctx.translate(screenX, screenY);
+            // Render — manual transform instead of save/restore (faster)
+            ctx.setTransform(1, 0, 0, 1, screenX, screenY);
+            const cos = mCos(angleToCenter);
+            const sin = mSin(angleToCenter);
+            ctx.transform(cos, sin, -sin, cos, 0, 0);
 
-            // Re-introduce the stretch effect by rotating the particle towards the center
-            ctx.rotate(angleToCenter);
-
-            ctx.lineCap = "round";
             ctx.lineWidth = finalThickness;
             ctx.beginPath();
             ctx.moveTo(0, 0);
 
-            // Calculate stretch length: Particles stretch visually only when expanding near the camera 
-            // and positioned in the outer rings.
-            const rawStretch = dist / maxRadius;
+            // Stretch calculation
+            const rawStretch = distRatio;
             const positionAllowance = rawStretch < 0.3 ? 0 : Math.pow(rawStretch, 1.5);
             const phaseAllowance = Math.max(0, (uniformScale - 1) / 0.15);
 
@@ -265,7 +241,9 @@ registerPaint("ring-particles", class {
 
             ctx.lineTo(stretchLength, 0);
             ctx.stroke();
-            ctx.restore();
         }
+
+        // Reset transform at end
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
     }
 });
