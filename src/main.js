@@ -1,106 +1,32 @@
 import './styles/tokens.css';
 import './styles/main.css';
+import { AntigravityParticles } from './antigravity-particles.js';
 
-// Register Paint Worklet
-if ('paintWorklet' in CSS) {
-    CSS.paintWorklet.addModule(new URL('./particle-worklet.js', import.meta.url));
+// ─── Antigravity.google WebGL Particle System ───
+const particlesContainer = document.querySelector('.particles-bg');
+if (particlesContainer) {
+    const isDark = !document.body.classList.contains('light-mode');
+    const particles = new AntigravityParticles(particlesContainer, {
+        theme:            isDark ? 'dark' : 'light',
+        density:          200,    // Poisson disk — ~2 000 visible particles
+        particlesScale:   0.75,   // exact hero default from source
+        cameraZoom:       3.1,    // exact from source
+        ringWidth:        0.15,   // exact hero default
+        ringWidth2:       0.05,
+        ringDisplacement: 0.15,
+        interactive:      true,   // ring follows mouse cursor
+    });
+
+    // Sync theme toggle → update particle colours
+    const themeObserver = new MutationObserver(() => {
+        const dark = !document.body.classList.contains('light-mode');
+        particles._renderMaterial.uniforms.uColor1.value.set(dark ? '#7189ff' : '#2c64ed');
+        particles._renderMaterial.uniforms.uColor2.value.set(dark ? '#3074f9' : '#f84242');
+        particles._renderMaterial.uniforms.uColor3.value.set(dark ? '#000000' : '#ffcf03');
+        particles._renderMaterial.uniforms.uColorScheme.value = dark ? 0 : 1;
+    });
+    themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 }
-
-// ─── Animation Loop for Particles ───
-let tick = 0;
-// 0.3 units/frame at 60fps (~16.6ms) → 0.018 tick units per millisecond
-const tickPerMs = 0.018;
-let lastTime = 0;
-
-// Ring position state
-let mouseX = window.innerWidth / 2;
-let mouseY = window.innerHeight / 2;
-let ringX = mouseX;
-let ringY = mouseY;
-
-// Cache values to avoid redundant CSS variable DOM writes
-let lastMouseX = -1;
-let lastMouseY = -1;
-let lastRingX = -1;
-let lastRingY = -1;
-
-// Frame-rate-independent lerp
-function lerp(start, end, amt) {
-    return (1 - amt) * start + amt * end;
-}
-
-const particlesBg = document.querySelector('.particles-bg');
-
-// Lerp smoothing constant — designed for 60fps baseline
-const LERP_BASE = 0.012;
-const LERP_FRAME_MS = 16.667; // 60fps reference frame time
-
-let animationId = null;
-
-function animate(currentTime) {
-    if (!lastTime) lastTime = currentTime;
-    const deltaTime = currentTime - lastTime;
-    lastTime = currentTime;
-
-    // Delta-time tick: identical visual speed at 60/90/120/165Hz
-    tick += deltaTime * tickPerMs;
-
-    if (particlesBg) {
-        particlesBg.style.setProperty('--animation-tick', tick.toString());
-
-        // Frame-rate-independent lerp: 1 - (1-base)^(dt/16.667)
-        if (Math.abs(ringX - mouseX) > 0.1 || Math.abs(ringY - mouseY) > 0.1) {
-            const lerpAmt = 1 - Math.pow(1 - LERP_BASE, deltaTime / LERP_FRAME_MS);
-            ringX = lerp(ringX, mouseX, lerpAmt);
-            ringY = lerp(ringY, mouseY, lerpAmt);
-
-            const roundRingX = Math.round(ringX * 10) / 10;
-            const roundRingY = Math.round(ringY * 10) / 10;
-
-            if (roundRingX !== lastRingX) {
-                particlesBg.style.setProperty('--ring-x', roundRingX.toFixed(1));
-                lastRingX = roundRingX;
-            }
-            if (roundRingY !== lastRingY) {
-                particlesBg.style.setProperty('--ring-y', roundRingY.toFixed(1));
-                lastRingY = roundRingY;
-            }
-        }
-
-        if (mouseX !== lastMouseX) {
-            particlesBg.style.setProperty('--mouse-x-instant', mouseX.toFixed(1));
-            lastMouseX = mouseX;
-        }
-        if (mouseY !== lastMouseY) {
-            particlesBg.style.setProperty('--mouse-y-instant', mouseY.toFixed(1));
-            lastMouseY = mouseY;
-        }
-    }
-
-    animationId = requestAnimationFrame(animate);
-}
-
-// Passive mouse tracking
-document.addEventListener('mousemove', (e) => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
-}, { passive: true });
-
-// Pause animation when tab is hidden to save CPU/GPU
-document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-        if (animationId) {
-            cancelAnimationFrame(animationId);
-            animationId = null;
-        }
-    } else {
-        lastTime = 0; // Reset so delta doesn't spike
-        animationId = requestAnimationFrame(animate);
-    }
-});
-
-// Start animation
-animationId = requestAnimationFrame(animate);
 
 
 // ─── Mobile Navigation Toggle ───
@@ -170,25 +96,11 @@ if (themeBtn) {
     }
 }
 
-// ─── Removed Experience Traverse ───
-
-// Removing portal read/write logic
-
-// Empty scroll/resize functions since Traverse code is gone
 
 // ─── Card Mouse Tracking for Glow Effect ───
-// Optimize via event delegation and avoiding getBoundingClientRect during mousemove
 document.addEventListener('mousemove', e => {
-    // Only process if moving over a tracked element
-    const card = e.target.closest('.bento-card, .traverse-card');
+    const card = e.target.closest('.card, .project-card, .bento-card, .traverse-card');
     if (!card) return;
-
-    // Instead of forcing layout recalculation via getBoundingClientRect, 
-    // extract coordinates dynamically assuming the card is relatively positioned.
-    // Modern approach: use clientX/clientY minus the element's offset relative to viewport
-    // Since getBoundingClientRect forces layout, we'll cache it conditionally or rely on bounding logic 
-    // that only recalculates occasionally. For now, reading rect here is okay if limited to hovered element, 
-    // but caching it during scroll would be better. Let's apply a rapid cache approach:
 
     if (!card._rectCache || e.timeStamp - (card._rectTime || 0) > 500) {
         card._rectCache = card.getBoundingClientRect();
@@ -196,7 +108,275 @@ document.addEventListener('mousemove', e => {
     }
 
     const rect = card._rectCache;
-    // We do write directly to style which is fast if batched or updating CSS var isolated
     card.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
     card.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
 }, { passive: true });
+
+
+// ─── DevOps Console: Experience Timeline ───
+const MILESTONE_DATA = [
+    {
+        command: 'cat /var/log/career/synnefo.log',
+        lines: [
+            { type: 'info', text: '╔══════════════════════════════════════════════╗' },
+            { type: 'info', text: '║  DEPLOYMENT LOG: Synnefo Solutions           ║' },
+            { type: 'info', text: '║  Role: Senior DevOps Engineer                ║' },
+            { type: 'info', text: '║  Period: 2022 — Present                      ║' },
+            { type: 'info', text: '╚══════════════════════════════════════════════╝' },
+            { type: 'output', text: '' },
+            { type: 'success', text: '✓ Architected multi-region AWS infrastructure' },
+            { type: 'success', text: '✓ Designed CI/CD pipelines (Jenkins, GitHub Actions)' },
+            { type: 'success', text: '✓ Managed 50+ Kubernetes production clusters' },
+            { type: 'success', text: '✓ Implemented Terraform IaC across 20+ accounts' },
+            { type: 'success', text: '✓ Achieved 99.99% uptime SLA for critical services' },
+            { type: 'output', text: '' },
+            { type: 'output', text: 'Stack: AWS | Kubernetes | Terraform | Docker' },
+            { type: 'output', text: '       Jenkins | Prometheus | Grafana | Ansible' },
+        ]
+    },
+    {
+        command: 'cat /var/log/career/cloud-architect.log',
+        lines: [
+            { type: 'info', text: '╔══════════════════════════════════════════════╗' },
+            { type: 'info', text: '║  DEPLOYMENT LOG: Cloud Architecture Lead     ║' },
+            { type: 'info', text: '║  Period: 2020 — 2022                         ║' },
+            { type: 'info', text: '╚══════════════════════════════════════════════╝' },
+            { type: 'output', text: '' },
+            { type: 'success', text: '✓ Led 20+ zero-downtime cloud migrations' },
+            { type: 'success', text: '✓ Designed HA architectures (multi-AZ, auto-scaling)' },
+            { type: 'success', text: '✓ Built monitoring dashboards (Prometheus + Grafana)' },
+            { type: 'success', text: '✓ Reduced infra costs by 40% via right-sizing' },
+            { type: 'success', text: '✓ Mentored 10+ engineers on cloud best practices' },
+            { type: 'output', text: '' },
+            { type: 'output', text: 'Stack: AWS | GCP | Terraform | CloudFormation' },
+        ]
+    },
+    {
+        command: 'cat /var/log/certifications/rhcsa.log',
+        lines: [
+            { type: 'info', text: '╔══════════════════════════════════════════════╗' },
+            { type: 'info', text: '║  CERTIFICATION: RHCSA                        ║' },
+            { type: 'info', text: '║  ID: 250-136-470                             ║' },
+            { type: 'info', text: '║  Issued: 2019                                ║' },
+            { type: 'info', text: '╚══════════════════════════════════════════════╝' },
+            { type: 'output', text: '' },
+            { type: 'success', text: '✓ Red Hat Certified System Administrator' },
+            { type: 'success', text: '✓ Advanced Linux system management' },
+            { type: 'success', text: '✓ SELinux, firewall, storage, networking' },
+            { type: 'success', text: '✓ Shell scripting & process automation' },
+            { type: 'success', text: '✓ User & group management at enterprise scale' },
+            { type: 'output', text: '' },
+            { type: 'output', text: 'Verification: rhn.redhat.com/verify/250-136-470' },
+        ]
+    },
+    {
+        command: 'cat /var/log/career/linux-admin.log',
+        lines: [
+            { type: 'info', text: '╔══════════════════════════════════════════════╗' },
+            { type: 'info', text: '║  DEPLOYMENT LOG: Linux Systems Admin         ║' },
+            { type: 'info', text: '║  Period: 2018 — 2020                         ║' },
+            { type: 'info', text: '╚══════════════════════════════════════════════╝' },
+            { type: 'output', text: '' },
+            { type: 'success', text: '✓ Managed 100+ bare-metal & VM Linux servers' },
+            { type: 'success', text: '✓ Configured iptables, SELinux, fail2ban' },
+            { type: 'success', text: '✓ Automated server provisioning with Ansible' },
+            { type: 'success', text: '✓ Built custom monitoring with Nagios + Bash' },
+            { type: 'success', text: '✓ Reduced deployment time by 70% via scripting' },
+            { type: 'output', text: '' },
+            { type: 'output', text: 'Stack: RHEL | CentOS | Bash | Ansible | Nagios' },
+        ]
+    }
+];
+
+const terminalOutput = document.getElementById('terminal-output');
+const timelineNodes = document.querySelectorAll('.timeline-node');
+let currentTypingTimeout = null;
+let typingTimeouts = [];
+
+function clearTyping() {
+    typingTimeouts.forEach(t => clearTimeout(t));
+    typingTimeouts = [];
+}
+
+function typeTerminalLines(milestone) {
+    clearTyping();
+    if (!terminalOutput) return;
+
+    const data = MILESTONE_DATA[milestone];
+    if (!data) return;
+
+    // Clear terminal
+    terminalOutput.innerHTML = '';
+
+    // Add command prompt
+    const cmdLine = document.createElement('div');
+    cmdLine.className = 'terminal-line';
+    cmdLine.innerHTML = `<span class="prompt">$</span> <span class="cmd">${data.command}</span>`;
+    terminalOutput.appendChild(cmdLine);
+
+    // Type out each line with a staggered delay
+    data.lines.forEach((line, i) => {
+        const timeout = setTimeout(() => {
+            const lineEl = document.createElement('div');
+            lineEl.className = 'terminal-line';
+
+            if (line.text === '') {
+                lineEl.innerHTML = '&nbsp;';
+            } else {
+                lineEl.innerHTML = `<span class="${line.type}">${escapeHtml(line.text)}</span>`;
+            }
+
+            terminalOutput.appendChild(lineEl);
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
+
+            // Add blinking cursor on last line
+            if (i === data.lines.length - 1) {
+                const cursorLine = document.createElement('div');
+                cursorLine.className = 'terminal-line terminal-cursor-blink';
+                cursorLine.innerHTML = '<span class="prompt">$</span> ';
+                terminalOutput.appendChild(cursorLine);
+                terminalOutput.scrollTop = terminalOutput.scrollHeight;
+            }
+        }, 60 + i * 55);
+        typingTimeouts.push(timeout);
+    });
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// Initialize timeline
+if (timelineNodes.length > 0 && terminalOutput) {
+    timelineNodes.forEach(node => {
+        node.addEventListener('click', () => {
+            // Update active state
+            timelineNodes.forEach(n => n.classList.remove('active'));
+            node.classList.add('active');
+
+            const milestone = parseInt(node.dataset.milestone, 10);
+            typeTerminalLines(milestone);
+        });
+    });
+
+    // Auto-type the first milestone on load
+    typeTerminalLines(0);
+}
+
+
+// ─── Contact Form ───
+const contactForm = document.getElementById('contact-form');
+const contactTerminal = document.getElementById('contact-terminal-output');
+const submitBtn = document.getElementById('submit-btn');
+
+function validateField(input, errorEl) {
+    if (!input.value.trim()) {
+        input.classList.add('invalid');
+        errorEl.textContent = 'This field is required.';
+        return false;
+    }
+    if (input.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value)) {
+        input.classList.add('invalid');
+        errorEl.textContent = 'Please enter a valid email.';
+        return false;
+    }
+    input.classList.remove('invalid');
+    errorEl.textContent = '';
+    return true;
+}
+
+function typeContactTerminal(lines) {
+    if (!contactTerminal) return;
+    contactTerminal.innerHTML = '';
+
+    lines.forEach((line, i) => {
+        const timeout = setTimeout(() => {
+            const lineEl = document.createElement('div');
+            lineEl.className = 'terminal-line';
+
+            if (line.type === 'cmd') {
+                lineEl.innerHTML = `<span class="prompt">$</span> <span class="cmd">${escapeHtml(line.text)}</span>`;
+            } else {
+                lineEl.innerHTML = `<span class="${line.type}">${escapeHtml(line.text)}</span>`;
+            }
+
+            contactTerminal.appendChild(lineEl);
+            contactTerminal.scrollTop = contactTerminal.scrollHeight;
+
+            // On the final line, add a blinking cursor and reset the button
+            if (i === lines.length - 1) {
+                const cursorLine = document.createElement('div');
+                cursorLine.className = 'terminal-line terminal-cursor-blink';
+                cursorLine.innerHTML = '<span class="prompt">$</span> ';
+                contactTerminal.appendChild(cursorLine);
+
+                // Reset button after success animation
+                if (submitBtn) {
+                    setTimeout(() => {
+                        submitBtn.classList.remove('loading', 'success');
+                        submitBtn.querySelector('.btn-text').textContent = 'Deploy Message';
+                    }, 3000);
+                }
+            }
+        }, 80 + i * 100);
+    });
+}
+
+if (contactForm && submitBtn) {
+    // Clear validation on input
+    contactForm.querySelectorAll('input, textarea').forEach(input => {
+        input.addEventListener('input', () => {
+            input.classList.remove('invalid');
+            const errorEl = input.parentElement.querySelector('.field-error');
+            if (errorEl) errorEl.textContent = '';
+        });
+    });
+
+    contactForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const nameInput = document.getElementById('contact-name');
+        const emailInput = document.getElementById('contact-email');
+        const msgInput = document.getElementById('contact-message');
+        const nameError = document.getElementById('name-error');
+        const emailError = document.getElementById('email-error');
+        const msgError = document.getElementById('message-error');
+
+        const isNameValid = validateField(nameInput, nameError);
+        const isEmailValid = validateField(emailInput, emailError);
+        const isMsgValid = validateField(msgInput, msgError);
+
+        if (!isNameValid || !isEmailValid || !isMsgValid) return;
+
+        // Start "deploying" animation
+        submitBtn.classList.add('loading');
+
+        const name = nameInput.value.trim();
+        const email = emailInput.value.trim();
+
+        typeContactTerminal([
+            { type: 'cmd', text: 'kubectl apply -f message-payload.yaml' },
+            { type: 'output', text: `Packaging payload from ${name} <${email}>...` },
+            { type: 'output', text: 'Validating SMTP route configuration...' },
+            { type: 'success', text: '✓ Route validated: smtp-gateway.sreejith.cloud' },
+            { type: 'output', text: 'Provisioning message container...' },
+            { type: 'success', text: '✓ Container deployed: msg-relay-pod-7x3k2' },
+            { type: 'output', text: 'Encrypting payload with TLS 1.3...' },
+            { type: 'success', text: '✓ Payload encrypted and sealed' },
+            { type: 'output', text: 'Deploying to message queue...' },
+            { type: 'success', text: '✓ Message successfully deployed!' },
+            { type: 'output', text: '' },
+            { type: 'info', text: '📬 Thank you! I\'ll respond within 24 hours.' },
+        ]);
+
+        // Show success on button
+        setTimeout(() => {
+            submitBtn.classList.remove('loading');
+            submitBtn.classList.add('success');
+            submitBtn.querySelector('.btn-text').textContent = '✓ Deployed';
+            contactForm.reset();
+        }, 1400);
+    });
+}

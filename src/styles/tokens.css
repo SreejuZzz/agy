@@ -66,15 +66,33 @@
 
     /* Houdini & Particles Defaults */
     --ring-radius: 570;
-    /* Max Cloud Radius - reduced to make the ring less massive */
     --ring-thickness: 0;
-    /* Increased count and rows for a beautifully organized, dense ring */
     --particle-count: 600;
     --particle-rows: 45;
     --particle-color: var(--color-accent);
     --particle-size: 3;
-    /* Adjusted size slightly down to accompany increased density */
     --animation-tick: 0;
+
+    /* Terminal / Console Theme */
+    --terminal-bg: rgba(8, 12, 20, 0.85);
+    --terminal-border: rgba(0, 255, 136, 0.12);
+    --terminal-green: #00ff88;
+    --terminal-green-dim: rgba(0, 255, 136, 0.5);
+    --terminal-green-glow: rgba(0, 255, 136, 0.15);
+    --terminal-text: #c8d6e5;
+    --terminal-prompt: #00ff88;
+    --terminal-cursor: #00ff88;
+    --terminal-header-bg: rgba(0, 255, 136, 0.06);
+    --terminal-dot-red: #ff5f57;
+    --terminal-dot-yellow: #febc2e;
+    --terminal-dot-green: #28c840;
+
+    /* Contact Section */
+    --color-success: #00ff88;
+    --color-error: #ff4757;
+    --input-bg: rgba(255, 255, 255, 0.04);
+    --input-border: rgba(255, 255, 255, 0.08);
+    --input-border-focus: var(--color-accent);
 }
 
 body.light-mode {
@@ -84,10 +102,23 @@ body.light-mode {
     --color-text-primary: #1d1d1f;
     --color-text-secondary: #4a4a4a;
     --color-accent: #0022aa;
-    /* Slightly deeper navy for light mode */
     --color-accent-glow: rgba(0, 34, 170, 0.3);
     --particle-hue: 228;
-    /* Deep Navy Blue matching light mode --color-accent */
+
+    /* Terminal overrides for light mode */
+    --terminal-bg: rgba(240, 244, 248, 0.92);
+    --terminal-border: rgba(0, 120, 80, 0.15);
+    --terminal-green: #007850;
+    --terminal-green-dim: rgba(0, 120, 80, 0.5);
+    --terminal-green-glow: rgba(0, 120, 80, 0.08);
+    --terminal-text: #334155;
+    --terminal-prompt: #007850;
+    --terminal-cursor: #007850;
+    --terminal-header-bg: rgba(0, 120, 80, 0.06);
+
+    /* Contact overrides */
+    --input-bg: rgba(0, 0, 0, 0.03);
+    --input-border: rgba(0, 0, 0, 0.1);
 }
 
 /* Mobile Responsive Variable Scaling */

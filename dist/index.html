@@ -6,52 +6,59 @@
     <link rel="icon" type="image/svg+xml" href="/agy/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description"
-        content="Sreejith M S — Senior DevOps Engineer & Cloud Architect. Kubernetes, AWS, Terraform, CI/CD pipeline specialist." />
+        content="Sreejith M S — Senior DevOps Engineer & Cloud Architect. Kubernetes, AWS, Terraform, CI/CD pipeline specialist. RHCSA Certified." />
     <meta name="theme-color" content="#050505" />
-    <title>Sreejith M S | Portfolio</title>
+    <meta name="author" content="Sreejith M S" />
+    <meta property="og:title" content="Sreejith M S | DevOps Engineer & Cloud Architect" />
+    <meta property="og:description"
+        content="Portfolio of Sreejith M S — building automated, zero-downtime cloud infrastructure." />
+    <meta property="og:type" content="website" />
+    <title>Sreejith M S | DevOps Engineer & Cloud Architect</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload"
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Outfit:wght@700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@700&family=JetBrains+Mono:wght@400;500&display=swap"
         as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Outfit:wght@700&display=swap"
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@700&family=JetBrains+Mono:wght@400;500&display=swap"
             rel="stylesheet">
     </noscript>
-  <script type="module" crossorigin src="/agy/assets/index-DcHq_Vtb.js"></script>
-  <link rel="stylesheet" crossorigin href="/agy/assets/index-UicHJEb8.css">
+  <script type="module" crossorigin src="/agy/assets/index-BaNwraO-.js"></script>
+  <link rel="stylesheet" crossorigin href="/agy/assets/index-CcZtc7T8.css">
 </head>
 
 <body>
     <div id="app">
         <header class="main-header">
-            <nav>
+            <nav aria-label="Primary navigation">
                 <div class="logo">Sreejith</div>
 
                 <!-- Mobile Menu Button -->
-                <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false">
+                <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false"
+                    aria-controls="nav-links">
                     <span class="bar"></span>
                     <span class="bar"></span>
                     <span class="bar"></span>
                 </button>
 
-                <ul class="nav-links" id="nav-links">
+                <ul class="nav-links" id="nav-links" role="list">
                     <li><a href="#home">Home</a></li>
                     <li><a href="#about">About</a></li>
                     <li><a href="#experience">Experience</a></li>
                     <li><a href="#work">Work</a></li>
                     <li><a href="#portal-contact">Contact</a></li>
-                    <li><button id="theme-toggle" class="theme-toggle" aria-label="Toggle Dark Mode">
+                    <li><button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark and light mode">
                             <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round">
+                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <circle cx="12" cy="12" r="5" />
                                 <path
                                     d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
                             </svg>
                             <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round">
+                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                             </svg>
                         </button></li>
@@ -65,7 +72,7 @@
                 <div class="content">
                     <h1 class="hero-title">Sreejith M S</h1>
                     <p class="hero-subtitle">DevOps Engineer & Cloud Architect @ Synnefo Solutions</p>
-                    <div class="scroll-indicator">
+                    <div class="scroll-indicator" aria-hidden="true">
                         <span>Scroll</span>
                         <div class="arrow">↓</div>
                     </div>
@@ -89,7 +96,8 @@
 
                     <div class="cert-badge">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            aria-hidden="true">
                             <path d="M12 15V3m0 12l-4-4m4 4l4-4m-4 12a9 9 0 1 1 0-18 9 9 0 0 1 0 18z" />
                         </svg>
                         <span>RHCSA Certified: <strong>250-136-470</strong></span>
@@ -118,182 +126,71 @@
                 </div>
             </section>
 
-            <section id="experience" class="stone-section">
+            <!-- DevOps Console: Interactive Career Timeline -->
+            <section id="experience" class="snap-section experience">
                 <div class="content">
-                    <h2 class="stone-title">Career Journey</h2>
+                    <h2>Experience</h2>
+                    <p class="section-subtitle">Click a milestone to inspect the deployment logs.</p>
 
-                    <div class="stone-grid">
-                        <!-- 2024 - Present -->
-                        <div class="stone-card" data-year="2024 - Present"
-                            data-role="Senior DevOps Engineer & Technical Head" data-company="Synnefo Solutions">
-                            <div class="stone-preview">
-                                <span class="stone-year">2024 - Present</span>
-                                <h3>Technical Head</h3>
+                    <div class="console-layout">
+                        <div class="timeline-panel">
+                            <div class="timeline-track">
+                                <button class="timeline-node active" data-milestone="0"
+                                    aria-label="Current role at Synnefo Solutions">
+                                    <span class="node-dot"></span>
+                                    <div class="node-info">
+                                        <span class="node-year">2022 — Present</span>
+                                        <span class="node-title">Senior DevOps Engineer</span>
+                                        <span class="node-company">Synnefo Solutions</span>
+                                    </div>
+                                </button>
+                                <button class="timeline-node" data-milestone="1"
+                                    aria-label="Cloud Architecture Lead role">
+                                    <span class="node-dot"></span>
+                                    <div class="node-info">
+                                        <span class="node-year">2020 — 2022</span>
+                                        <span class="node-title">Cloud Architecture Lead</span>
+                                        <span class="node-company">Infrastructure Projects</span>
+                                    </div>
+                                </button>
+                                <button class="timeline-node" data-milestone="2"
+                                    aria-label="RHCSA Certification achievement">
+                                    <span class="node-dot"></span>
+                                    <div class="node-info">
+                                        <span class="node-year">2019</span>
+                                        <span class="node-title">RHCSA Certification</span>
+                                        <span class="node-company">Red Hat #250-136-470</span>
+                                    </div>
+                                </button>
+                                <button class="timeline-node" data-milestone="3"
+                                    aria-label="Linux Systems Administration role">
+                                    <span class="node-dot"></span>
+                                    <div class="node-info">
+                                        <span class="node-year">2018 — 2020</span>
+                                        <span class="node-title">Linux Systems Admin</span>
+                                        <span class="node-company">Server & Network Ops</span>
+                                    </div>
+                                </button>
                             </div>
-                            <!-- Hidden Data for Modal -->
-                            <div class="stone-hidden-content">
-                                <p class="stone-desc">Architecting robust cloud infrastructure, optimizing CI/CD
-                                    pipelines, and leading a team of DevOps Engineers to deliver highly scalable,
-                                    secure, and automated enterprise solutions.</p>
-                                <ul class="stone-achievements">
-                                    <li>Led a team of 8 engineers across 15+ enterprise client projects</li>
-                                    <li>Reduced deployment failures by 90% through GitOps workflow standardization</li>
-                                    <li>Architected multi-region HA clusters handling 50K+ RPM</li>
-                                </ul>
-                                <div class="tech-stack">
-                                    <span>AWS</span><span>Kubernetes</span><span>Terraform</span><span>Python</span>
+                        </div>
+
+                        <div class="terminal-panel">
+                            <div class="terminal-window">
+                                <div class="terminal-header">
+                                    <div class="terminal-dots">
+                                        <span class="dot dot-red"></span>
+                                        <span class="dot dot-yellow"></span>
+                                        <span class="dot dot-green"></span>
+                                    </div>
+                                    <span class="terminal-title">sreejith@cloud ~ deploy-log</span>
+                                </div>
+                                <div class="terminal-body" id="terminal-output" aria-live="polite" role="log">
+                                    <div class="terminal-line">
+                                        <span class="prompt">$</span>
+                                        <span class="cmd">cat /var/log/career/synnefo.log</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- 2023 -->
-                        <div class="stone-card" data-year="2023" data-role="Junior DevOps Engineer"
-                            data-company="Synnefo Solutions">
-                            <div class="stone-preview">
-                                <span class="stone-year">2023</span>
-                                <h3>Junior DevOps</h3>
-                            </div>
-                            <div class="stone-hidden-content">
-                                <p class="stone-desc">Streamlined software delivery by implementing comprehensive CI/CD
-                                    automation, containerizing microservices with Docker, and provisioning
-                                    infrastructure as code.</p>
-                                <ul class="stone-achievements">
-                                    <li>Built 20+ CI/CD pipelines cutting release cycles from days to minutes</li>
-                                    <li>Containerized 12 legacy monoliths into production-ready microservices</li>
-                                    <li>Automated infrastructure provisioning saving 30+ hours/week</li>
-                                </ul>
-                                <div class="tech-stack">
-                                    <span>Docker</span><span>GitLab CI</span><span>Jenkins</span><span>Ansible</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 2022 -->
-                        <div class="stone-card" data-year="2022" data-role="Cloud Engineer"
-                            data-company="Synnefo Solutions">
-                            <div class="stone-preview">
-                                <span class="stone-year">2022</span>
-                                <h3>Cloud Engineer</h3>
-                            </div>
-                            <div class="stone-hidden-content">
-                                <p class="stone-desc">Managed and scaled enterprise cloud environments, performed
-                                    advanced system migrations, and ensured strict security compliance and 99.9% uptime.
-                                </p>
-                                <ul class="stone-achievements">
-                                    <li>Maintained 99.9% uptime across 200+ production cloud instances</li>
-                                    <li>Achieved RHCSA certification (ID: 250-136-470)</li>
-                                    <li>Implemented automated patching reducing vulnerability windows by 80%</li>
-                                </ul>
-                                <div class="tech-stack">
-                                    <span>Cloud</span><span>Linux</span><span>Bash</span><span>Security</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 2021 -->
-                        <div class="stone-card" data-year="2021" data-role="Linux Administrator"
-                            data-company="Synnefo Solutions">
-                            <div class="stone-preview">
-                                <span class="stone-year">2021</span>
-                                <h3>Linux Admin</h3>
-                            </div>
-                            <div class="stone-hidden-content">
-                                <p class="stone-desc">Handled daily server provisioning, user administration, backup
-                                    routines, and proactive system monitoring to prevent downtime.</p>
-                                <ul class="stone-achievements">
-                                    <li>Provisioned and configured 50+ bare-metal and VM-based servers</li>
-                                    <li>Designed backup strategies with RPO under 4 hours for critical data</li>
-                                </ul>
-                                <div class="tech-stack">
-                                    <span>Linux</span><span>Cron</span><span>Systemd</span><span>Monitoring</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 2020 -->
-                        <div class="stone-card" data-year="2020" data-role="Network Engineer"
-                            data-company="Synnefo Solutions">
-                            <div class="stone-preview">
-                                <span class="stone-year">2020</span>
-                                <h3>Network Eng.</h3>
-                            </div>
-                            <div class="stone-hidden-content">
-                                <p class="stone-desc">Configured routing protocols, managed VPNs, and maintained secure
-                                    network architectures bridging internal teams and client data centers.</p>
-                                <ul class="stone-achievements">
-                                    <li>Managed site-to-site VPN tunnels connecting 8 client data centers</li>
-                                    <li>Reduced network outages by 60% with proactive monitoring dashboards</li>
-                                </ul>
-                                <div class="tech-stack">
-                                    <span>Routing</span><span>VPN</span><span>Firewalls</span><span>Cisco</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 2018 -->
-                        <div class="stone-card" data-year="2018" data-role="Network Administrator"
-                            data-company="SDC Networks">
-                            <div class="stone-preview">
-                                <span class="stone-year">2018</span>
-                                <h3>Net Admin</h3>
-                            </div>
-                            <div class="stone-hidden-content">
-                                <p class="stone-desc">Started career by performing network infrastructure
-                                    troubleshooting, bandwidth monitoring, and ensuring physical data center
-                                    connectivity.</p>
-                                <ul class="stone-achievements">
-                                    <li>Maintained physical connectivity for 500+ rack-mounted devices</li>
-                                    <li>First responder for critical network incidents with &lt;15-min MTTR</li>
-                                </ul>
-                                <div class="tech-stack">
-                                    <span>Switches</span><span>Cabling</span><span>TCP/IP</span><span>DHCP</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Mentorship Card -->
-                        <div class="stone-card special-stone" data-year="700+" data-role="Students Mentored"
-                            data-company="Continuous Impact">
-                            <div class="stone-preview">
-                                <span class="stone-year">Impact</span>
-                                <h3>700+ Mentored</h3>
-                            </div>
-                            <div class="stone-hidden-content">
-                                <p class="stone-desc">Passionate about teaching and building the next generation of
-                                    engineers. I have personally mentored over 700 students in cutting-edge DevOps
-                                    methodologies, Cloud orchestration, and Linux engineering.</p>
-                                <ul class="stone-achievements">
-                                    <li>Conducted multiple bootcamps and workshop sessions for aspiring engineers</li>
-                                    <li>Developed open-source learning paths for Kubernetes and CI/CD operations</li>
-                                </ul>
-                                <div class="tech-stack">
-                                    <span>Leadership</span><span>Mentorship</span><span>Workshops</span><span>OS
-                                        Contrib</span>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- Global Modal Overlay -->
-                <div id="stone-modal-overlay" class="stone-modal-overlay hidden">
-                    <div class="stone-modal-backdrop"></div>
-                    <div class="stone-modal-content">
-                        <button class="modal-close-btn" aria-label="Close details">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                            </svg>
-                        </button>
-                        <div class="modal-header">
-                            <span class="modal-year"></span>
-                            <h2 class="modal-role"></h2>
-                            <h4 class="modal-company"></h4>
-                        </div>
-                        <div class="modal-body">
-                            <!-- Injected dynamically -->
                         </div>
                     </div>
                 </div>
@@ -331,7 +228,60 @@
                     </div>
                 </div>
             </section>
-            <!-- Removed Portal Section -->
+
+            <!-- Contact Section -->
+            <section id="portal-contact" class="snap-section contact-section">
+                <div class="content">
+                    <h2>Get In Touch</h2>
+                    <p class="section-subtitle">Send a message through the deployment pipeline.</p>
+
+                    <div class="contact-layout">
+                        <form class="contact-form" id="contact-form" novalidate>
+                            <div class="form-group">
+                                <label for="contact-name">Name</label>
+                                <input type="text" id="contact-name" name="name" placeholder="Your name" required
+                                    autocomplete="name" />
+                                <span class="field-error" id="name-error" aria-live="polite"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="contact-email">Email</label>
+                                <input type="email" id="contact-email" name="email" placeholder="you@example.com"
+                                    required autocomplete="email" />
+                                <span class="field-error" id="email-error" aria-live="polite"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="contact-message">Message</label>
+                                <textarea id="contact-message" name="message" rows="5"
+                                    placeholder="Tell me about your project…" required></textarea>
+                                <span class="field-error" id="message-error" aria-live="polite"></span>
+                            </div>
+                            <button type="submit" class="submit-btn" id="submit-btn">
+                                <span class="btn-text">Deploy Message</span>
+                                <span class="btn-loader" aria-hidden="true"></span>
+                            </button>
+                        </form>
+
+                        <div class="contact-terminal">
+                            <div class="terminal-window">
+                                <div class="terminal-header">
+                                    <div class="terminal-dots">
+                                        <span class="dot dot-red"></span>
+                                        <span class="dot dot-yellow"></span>
+                                        <span class="dot dot-green"></span>
+                                    </div>
+                                    <span class="terminal-title">sreejith@cloud ~ smtp-pipeline</span>
+                                </div>
+                                <div class="terminal-body" id="contact-terminal-output" aria-live="polite" role="log">
+                                    <div class="terminal-line">
+                                        <span class="prompt">$</span>
+                                        <span class="cmd">awaiting message payload...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 </body>
