@@ -5,16 +5,18 @@ import { AntigravityParticles } from './antigravity-particles.js';
 // ─── Antigravity.google WebGL Particle System ───
 const particlesContainer = document.querySelector('.particles-bg');
 if (particlesContainer) {
+    const isMobile = window.innerWidth <= 768;
     const particles = new AntigravityParticles(particlesContainer, {
         theme:            'dark',  // always use the vivid dark palette
-        density:          280,    // increased for more particles
-        particlesScale:   0.75,   // exact hero default from source
-        cameraZoom:       3.1,    // exact from source
-        ringWidth:        0.15,   // exact hero default
-        ringWidth2:       0.05,
-        ringDisplacement: 0.15,
-        interactive:      true,   // ring follows mouse cursor
+        density:          isMobile ? 320 : 280,    // slightly higher density on mobile
+        particlesScale:   isMobile ? 1.5 : 0.75,   // scaled up for crisp visibility on mobile
+        cameraZoom:       isMobile ? 3.5 : 3.1,    // zoom out slightly on mobile so the ring fits perfectly on the screen
+        ringWidth:        isMobile ? 0.20 : 0.15,  // wider ring on mobile to stand out
+        ringWidth2:       isMobile ? 0.08 : 0.05,
+        ringDisplacement: isMobile ? 0.20 : 0.15,
+        interactive:      true,   // ring follows mouse cursor / touch
     });
+
 
     // Same vivid blue-violet gradient in both light AND dark mode
     // No theme sync needed for colors — palette is identical in both modes

@@ -512,8 +512,15 @@ export class AntigravityParticles {
 
   _getParticleScale() {
     // Exact formula from source:  canvas.width / pixelRatio / 2000 * particlesScale
+    // Enhanced: Ensure particle sizes remain perfectly readable and premium on both mobile and desktop.
+    // By avoiding the harsh pixelRatio division on mobile viewports, we maintain excellent contrast.
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+      return Math.max((window.innerWidth / 1500) * this.particlesScale, 0.4);
+    }
     return (window.innerWidth / this.pixelRatio / 2000) * this.particlesScale;
   }
+
 
   _bindEvents() {
     // Resize
