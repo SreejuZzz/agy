@@ -13,12 +13,12 @@
     min-height: 100vh;
     width: 100%;
     position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 140px var(--spacing-lg) 80px;
-    /* Ample padding so fixed header never overlaps */
 }
 
 @media (max-width: 768px) {
@@ -47,20 +47,7 @@
     height: 100% !important;
 }
 
-/* Hero and all snap-sections must sit above the fixed canvas */
-.snap-section {
-    position: relative;
-    z-index: 1;
-}
 
-/* Remove the old hero-specific particle rules */
-.hero {
-    overflow: visible;
-}
-.hero .content {
-    position: relative;
-    z-index: 2;
-}
 
 
 /* Typography & Content */
@@ -72,7 +59,7 @@
 
 .hero-title {
     font-family: var(--font-display);
-    font-size: clamp(3rem, 8vw, 6rem);
+    font-size: clamp(2rem, 8vw, 6rem);
     font-weight: 700;
     margin-bottom: var(--spacing-sm);
     background: linear-gradient(
@@ -96,12 +83,13 @@
 }
 
 .hero-subtitle {
-    font-size: 1.5rem;
+    font-size: clamp(1rem, 3.5vw, 1.5rem);
     color: var(--color-text-secondary);
     opacity: 0;
     transform: translateY(25px);
     filter: blur(8px);
     animation: hero-entrance 1s cubic-bezier(0.16, 1, 0.3, 1) 0.35s forwards;
+    padding: 0 0.5rem;
 }
 
 /* Dramatic hero entrance: deblur + descale + slide up */
@@ -163,14 +151,7 @@
     }
 }
 
-/* ─── About Narrative Reveal ─── */
-.about-narrative {
-    opacity: 0;
-    transform: translateY(40px);
-    animation: auto linear section-heading-reveal both;
-    animation-timeline: view();
-    animation-range: entry 5% cover 30%;
-}
+
 
 /* Scroll-Driven Animations — animate elements as they enter the view */
 .card,
@@ -273,7 +254,7 @@
 .card-container,
 .project-gallery {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
     gap: var(--spacing-md);
     margin-top: var(--spacing-lg);
     width: 100%;
@@ -289,7 +270,7 @@
     background: linear-gradient(90deg, rgba(0, 68, 255, 0.1), rgba(0, 0, 0, 0.4));
     border: 1px solid var(--color-accent);
     border-radius: 50px;
-    font-size: 1rem;
+    font-size: clamp(0.8rem, 2.5vw, 1rem);
     font-weight: 500;
     color: var(--color-text-primary);
     backdrop-filter: blur(12px);
@@ -297,6 +278,8 @@
     transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
     position: relative;
     overflow: hidden;
+    max-width: 100%;
+    text-align: center;
 }
 
 /* Shimmer sweep on the badge */
@@ -356,45 +339,71 @@
 }
 
 /* =============================================
-   Header
+   Header & Navigation — Frosted Command Bar
    ============================================= */
+
 .main-header {
     position: fixed;
-    top: 0;
+    top: 1.25rem;
     left: 0;
     width: 100%;
-    padding: var(--spacing-md);
-    z-index: 100;
     display: flex;
     justify-content: center;
-
-    /* Nav entrance animation */
+    padding: 0 var(--spacing-md);
+    z-index: 100;
+    pointer-events: none;
     opacity: 0;
     transform: translateY(-20px);
     animation: nav-entrance 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
 }
 
 @keyframes nav-entrance {
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 nav {
+    pointer-events: all;
     display: flex;
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    max-width: 1200px;
-    background: rgba(0, 0, 0, 0.5);
+    max-width: 900px;
+    background: rgba(0, 0, 0, 0.55);
     backdrop-filter: blur(20px);
-    padding: 1rem 2rem;
+    -webkit-backdrop-filter: blur(20px);
+    padding: 0.75rem 1.5rem;
     border-radius: 50px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    transition: background 0.4s ease, box-shadow 0.4s ease;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: background 0.4s ease, border-color 0.5s ease, box-shadow 0.5s ease;
 }
 
+/* Pill darkens + gains accent glow when user scrolls past hero */
+.main-header.scrolled nav {
+    background: rgba(0, 0, 0, 0.82);
+    border-color: rgba(0, 68, 255, 0.22);
+    box-shadow: 0 0 32px rgba(0, 68, 255, 0.1), 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* ── Logo ── */
+.logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color var(--transition-fast);
+}
+
+.logo-prompt {
+    color: var(--color-accent);
+    font-weight: 700;
+    margin-right: 0.3em;
+}
+
+.logo:hover { color: var(--color-accent); }
+
+/* ── Nav links ── */
 .nav-links {
     list-style: none;
     display: flex;
@@ -403,18 +412,18 @@ nav {
 }
 
 .nav-links a {
-    color: var(--color-text-primary);
+    color: var(--color-text-secondary);
     text-decoration: none;
+    font-size: 0.875rem;
     font-weight: 500;
     transition: color var(--transition-fast);
     position: relative;
 }
 
-/* Animated underline grow on hover */
 .nav-links a::after {
     content: '';
     position: absolute;
-    bottom: -4px;
+    bottom: -3px;
     left: 50%;
     width: 0;
     height: 2px;
@@ -423,22 +432,48 @@ nav {
     transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.nav-links a:hover::after {
+.nav-links a:hover,
+.nav-links a.active {
+    color: var(--color-text-primary);
+}
+
+.nav-links a:hover::after,
+.nav-links a.active::after {
     width: 100%;
     left: 0;
 }
 
-.nav-links a:hover {
-    color: var(--color-accent);
+/* ── Theme toggle ── */
+.theme-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.4rem;
+    border-radius: 50%;
+    transition: color var(--transition-fast), background-color var(--transition-fast);
 }
 
-/* Hamburger Icon */
+.theme-toggle:hover {
+    color: var(--color-text-primary);
+    background-color: var(--color-surface-hover);
+}
+
+.theme-toggle .sun-icon { display: none; }
+.theme-toggle .moon-icon { display: block; }
+body.light-mode .theme-toggle .sun-icon { display: block; color: #f59e0b; }
+body.light-mode .theme-toggle .moon-icon { display: none; }
+
+/* ── Hamburger (mobile only) ── */
 .hamburger {
     display: none;
     flex-direction: column;
     justify-content: space-between;
-    width: 24px;
-    height: 18px;
+    width: 22px;
+    height: 16px;
     background: transparent;
     border: none;
     cursor: pointer;
@@ -454,27 +489,30 @@ nav {
     transform-origin: left center;
 }
 
-/* Hamburger Animation */
-.hamburger.active .bar:nth-child(1) {
-    transform: rotate(45deg);
-    width: 26px;
+.hamburger.active .bar:nth-child(1) { transform: rotate(45deg); width: 24px; }
+.hamburger.active .bar:nth-child(2) { opacity: 0; transform: translateX(20px); }
+.hamburger.active .bar:nth-child(3) { transform: rotate(-45deg); width: 24px; }
+
+/* ── Light mode overrides ── */
+body.light-mode nav {
+    background: rgba(255, 255, 255, 0.65);
+    border-color: rgba(0, 0, 0, 0.08);
 }
 
-.hamburger.active .bar:nth-child(2) {
-    opacity: 0;
-    transform: translateX(20px);
+body.light-mode .main-header.scrolled nav {
+    background: rgba(255, 255, 255, 0.88);
+    border-color: rgba(0, 34, 170, 0.2);
+    box-shadow: 0 0 32px rgba(0, 34, 170, 0.08), 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
-.hamburger.active .bar:nth-child(3) {
-    transform: rotate(-45deg);
-    width: 26px;
-}
-
-/* Mobile Navigation */
+/* ── Mobile navigation ── */
 @media (max-width: 768px) {
-    .hamburger {
-        display: flex;
+    .main-header {
+        top: 0.75rem;
+        padding: 0 1rem;
     }
+
+    .hamburger { display: flex; }
 
     .nav-links {
         position: fixed;
@@ -482,7 +520,7 @@ nav {
         left: 0;
         width: 100vw;
         height: 100vh;
-        background: rgba(0, 0, 0, 0.85);
+        background: rgba(0, 0, 0, 0.92);
         backdrop-filter: blur(25px);
         -webkit-backdrop-filter: blur(25px);
         flex-direction: column;
@@ -505,54 +543,14 @@ nav {
     }
 
     .nav-links a {
-        font-size: 1.5rem;
+        font-size: 1.4rem;
         font-weight: 600;
-        letter-spacing: 1px;
-    }
-
-    .theme-toggle {
-        margin-top: 2rem;
-        transform: scale(1.5);
+        color: var(--color-text-primary);
+        letter-spacing: 0.5px;
     }
 }
 
-.theme-toggle {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--color-text-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.5rem;
-    border-radius: 50%;
-    transition: background-color var(--transition-fast);
-}
-
-.theme-toggle:hover {
-    background-color: var(--color-surface-hover);
-}
-
-.theme-toggle .sun-icon {
-    display: none;
-}
-
-.theme-toggle .moon-icon {
-    display: block;
-}
-
-/* Light mode overrides for icon */
-body.light-mode .theme-toggle .sun-icon {
-    display: block;
-    color: #f59e0b;
-    /* Sunny yellow */
-}
-
-body.light-mode .theme-toggle .moon-icon {
-    display: none;
-}
-
-/* Custom DOM Ripple for Theme Toggle */
+/* ── Theme-switch ripple overlay ── */
 .theme-ripple {
     position: fixed;
     top: 0;
@@ -560,11 +558,9 @@ body.light-mode .theme-toggle .moon-icon {
     width: 100vw;
     height: 100vh;
     z-index: -2;
-    /* Below particles (-1), above body background */
     pointer-events: none;
     background-color: transparent;
     clip-path: circle(0px at 50% 50%);
-    /* We animate clip-path via JS Web Animations API for dynamic origin */
 }
 
 
@@ -609,6 +605,7 @@ body.light-mode .theme-toggle .moon-icon {
    About Section Utilities
    ============================================= */
 
+/* ─── About Narrative ─── */
 .about-narrative {
     max-width: 800px;
     margin: 0 auto 2rem;
@@ -616,6 +613,14 @@ body.light-mode .theme-toggle .moon-icon {
     font-size: 1.15rem;
     color: var(--color-text-secondary);
     line-height: 1.8;
+    opacity: 0;
+    animation: auto linear section-heading-reveal both;
+    animation-timeline: view();
+    animation-range: entry 5% cover 30%;
+}
+
+@media (max-width: 768px) {
+    .about-narrative { font-size: 1rem; }
 }
 
 .about-narrative p {
@@ -648,11 +653,7 @@ body.light-mode .theme-toggle .moon-icon {
     transform: translateY(-1px);
 }
 
-/* Section paint isolation */
-.about,
-.work {
-    contain: content;
-}
+
 
 
 /* =============================================
@@ -678,6 +679,73 @@ body.light-mode .theme-toggle .moon-icon {
 @media (max-width: 768px) {
     .console-layout {
         grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    /* On mobile, show the timeline horizontally as scrollable pills */
+    .timeline-track {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-left: 0;
+        padding-bottom: 0.5rem;
+        gap: 0.5rem;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .timeline-track::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Hide the vertical line on mobile */
+    .timeline-track::before {
+        display: none;
+    }
+
+    .timeline-node {
+        flex-shrink: 0;
+        padding: 0.65rem 1rem;
+        border: 1px solid var(--terminal-border);
+        background: var(--terminal-bg);
+        border-radius: 20px;
+        align-items: center;
+    }
+
+    /* Disable horizontal slide hover on mobile — conflicts with scroll animations */
+    .timeline-node:hover {
+        transform: none;
+    }
+
+    /* Hide the vertical dot column on mobile */
+    .node-dot {
+        display: none;
+    }
+
+    .node-info {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .node-title {
+        font-size: 0.85rem;
+    }
+
+    .node-year {
+        font-size: 0.65rem;
+    }
+
+    .node-company {
+        display: none;
+    }
+
+    /* Constrain terminal height on mobile */
+    .terminal-body {
+        min-height: 180px;
+        max-height: 260px;
+        font-size: 0.72rem;
     }
 }
 
@@ -728,6 +796,19 @@ body.light-mode .theme-toggle .moon-icon {
     animation: auto linear timeline-node-enter both;
     animation-timeline: view();
     animation-range: entry 0% cover 25%;
+}
+
+@media (max-width: 768px) {
+    .timeline-node {
+        /* On mobile pills, animate from below instead of from the side */
+        transform: translateY(10px);
+        animation-name: timeline-node-enter-mobile;
+    }
+}
+
+@keyframes timeline-node-enter-mobile {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 .timeline-node:nth-child(1) { animation-range: entry 0% cover 22%; }
@@ -904,6 +985,9 @@ body.light-mode .theme-toggle .moon-icon {
     /* Custom Scrollbar */
     scrollbar-width: thin;
     scrollbar-color: var(--terminal-green-dim) transparent;
+    /* Prevent content from causing layout issues */
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .terminal-body::-webkit-scrollbar {
@@ -1003,7 +1087,18 @@ body.light-mode .theme-toggle .moon-icon {
 @media (max-width: 768px) {
     .contact-layout {
         grid-template-columns: 1fr;
-        gap: var(--spacing-md);
+        gap: 1.5rem;
+    }
+
+    /* Stack contact terminal below form and shrink it */
+    .contact-terminal .terminal-body {
+        min-height: 140px;
+        max-height: 200px;
+        font-size: 0.72rem;
+    }
+
+    .contact-terminal .terminal-line {
+        word-break: break-all;
     }
 }
 
@@ -1012,12 +1107,17 @@ body.light-mode .theme-toggle .moon-icon {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    width: 100%;
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    opacity: 0;
+    animation: auto linear form-field-enter both;
+    animation-timeline: view();
+    animation-range: entry 5% cover 25%;
 }
 
 .form-group label {
@@ -1090,6 +1190,11 @@ body.light-mode .theme-toggle .moon-icon {
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, background 0.5s ease;
     position: relative;
     overflow: hidden;
+    width: 100%;
+    opacity: 0;
+    animation: auto linear form-field-enter both;
+    animation-timeline: view();
+    animation-range: entry 14% cover 34%;
 }
 
 /* Shine sweep across button */
@@ -1183,11 +1288,6 @@ button:focus-visible {
    Light Mode Specific Overrides
    ============================================= */
 
-body.light-mode nav {
-    background: rgba(255, 255, 255, 0.6);
-    border-color: rgba(0, 0, 0, 0.06);
-}
-
 body.light-mode .card,
 body.light-mode .project-card {
     border-color: rgba(0, 0, 0, 0.06);
@@ -1204,39 +1304,15 @@ body.light-mode .terminal-body {
 }
 
 
-/* =============================================
-   Contact Form Slide-In Entrance
-   ============================================= */
 
-.form-group {
-    opacity: 0;
-    transform: translateY(20px);
-    animation: auto linear form-field-enter both;
-    animation-timeline: view();
-    animation-range: entry 5% cover 25%;
-}
-
+/* ── Contact Form Scroll-Entrance stagger ── */
 .form-group:nth-child(1) { animation-range: entry 5% cover 22%; }
 .form-group:nth-child(2) { animation-range: entry 8% cover 26%; }
 .form-group:nth-child(3) { animation-range: entry 11% cover 30%; }
 
-.submit-btn {
-    opacity: 0;
-    transform: translateY(20px);
-    animation: auto linear form-field-enter both;
-    animation-timeline: view();
-    animation-range: entry 14% cover 34%;
-}
-
 @keyframes form-field-enter {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 

@@ -181,7 +181,7 @@ const RENDER_VERT = /* glsl */`
     gl_Position    = projectionMatrix * viewSpace;
     vScreenPos     = gl_Position.xy;
 
-    gl_PointSize = (vScale * 7.0) * (uPixelRatio * 0.5) * uParticleScale;
+    gl_PointSize = (vScale * 5.5) * (uPixelRatio * 0.5) * uParticleScale;
   }
 `;
 
@@ -319,11 +319,11 @@ export class AntigravityParticles {
     this.ringDisplacement = options.ringDisplacement ?? 0.15;
     this.interactive      = options.interactive      ?? true;   // ring follows cursor
 
-    // Colors (dark from source: #7189ff / #3074f9 / #000000)
+    // Colors — vivid light palette used for both dark AND light mode
     this.colorControls = {
-      color1: this.theme === 'dark' ? '#7189ff' : '#2c64ed',
-      color2: this.theme === 'dark' ? '#3074f9' : '#f84242',
-      color3: this.theme === 'dark' ? '#000000' : '#ffcf03',
+      color1: '#2c64ed',  // vivid blue
+      color2: '#f84242',  // vivid red
+      color3: '#ffcf03',  // vivid yellow
     };
 
     this.time     = 0;
@@ -494,7 +494,7 @@ export class AntigravityParticles {
         uRez:          { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
         uParticleScale:{ value: this._getParticleScale() },
         uPixelRatio:   { value: this.pixelRatio },
-        uColorScheme:  { value: this.theme === 'dark' ? 0 : 1 },
+        uColorScheme:  { value: 1 },   // velocity-mix mode — best with vivid light palette
       },
       vertexShader:   RENDER_VERT,
       fragmentShader: RENDER_FRAG,

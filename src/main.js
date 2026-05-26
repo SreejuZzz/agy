@@ -5,10 +5,9 @@ import { AntigravityParticles } from './antigravity-particles.js';
 // ─── Antigravity.google WebGL Particle System ───
 const particlesContainer = document.querySelector('.particles-bg');
 if (particlesContainer) {
-    const isDark = !document.body.classList.contains('light-mode');
     const particles = new AntigravityParticles(particlesContainer, {
-        theme:            isDark ? 'dark' : 'light',
-        density:          200,    // Poisson disk — ~2 000 visible particles
+        theme:            'dark',  // always use the vivid dark palette
+        density:          280,    // increased for more particles
         particlesScale:   0.75,   // exact hero default from source
         cameraZoom:       3.1,    // exact from source
         ringWidth:        0.15,   // exact hero default
@@ -17,16 +16,83 @@ if (particlesContainer) {
         interactive:      true,   // ring follows mouse cursor
     });
 
-    // Sync theme toggle → update particle colours
-    const themeObserver = new MutationObserver(() => {
-        const dark = !document.body.classList.contains('light-mode');
-        particles._renderMaterial.uniforms.uColor1.value.set(dark ? '#7189ff' : '#2c64ed');
-        particles._renderMaterial.uniforms.uColor2.value.set(dark ? '#3074f9' : '#f84242');
-        particles._renderMaterial.uniforms.uColor3.value.set(dark ? '#000000' : '#ffcf03');
-        particles._renderMaterial.uniforms.uColorScheme.value = dark ? 0 : 1;
-    });
-    themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    // Same vivid blue-violet gradient in both light AND dark mode
+    // No theme sync needed for colors — palette is identical in both modes
+
+    // ── Smooth scroll-based fade: particles visible only on hero ─────────────
+    // Maps the hero's exit progress linearly to canvas opacity for pixel-perfect
+    // smoothness — no threshold jumps, no CSS transition delays.
+    const heroSection = document.getElementById('home');
+    if (heroSection) {
+        // Fade starts when hero bottom is 80 % of viewport height from top,
+        // and completes when hero bottom reaches 20 % of viewport height.
+        const FADE_START = 0.80; // fraction of vh — hero bottom crossing this triggers fade
+        const FADE_END   = 0.20; // fraction of vh — fully transparent here
+
+        let rafId = null;
+
+        const updateParticleOpacity = () => {
+            rafId = null;
+            const rect   = heroSection.getBoundingClientRect();
+            const vh     = window.innerHeight;
+
+            // heroBottom as a 0→1 fraction of viewport height (1 = at bottom edge, 0 = at top)
+            const heroBottom = rect.bottom / vh;
+
+            let opacity;
+            if (heroBottom >= FADE_START) {
+                opacity = 1;  // hero fully (or mostly) visible — full opacity
+            } else if (heroBottom <= FADE_END) {
+                opacity = 0;  // hero has scrolled well past — fully hidden
+            } else {
+                // Linear interpolation between FADE_START and FADE_END
+                opacity = (heroBottom - FADE_END) / (FADE_START - FADE_END);
+            }
+
+            particlesContainer.style.opacity = opacity;
+        };
+
+        const onScroll = () => {
+            if (!rafId) rafId = requestAnimationFrame(updateParticleOpacity);
+        };
+
+        window.addEventListener('scroll', onScroll, { passive: true });
+        // Run once on load so initial state is correct
+        updateParticleOpacity();
+    }
 }
+
+
+// ─── Nav: scroll-state pill glow ───
+const mainHeader = document.querySelector('.main-header');
+if (mainHeader) {
+    const onNavScroll = () => mainHeader.classList.toggle('scrolled', window.scrollY > 60);
+    window.addEventListener('scroll', onNavScroll, { passive: true });
+    onNavScroll();
+}
+
+// ─── Nav: active-section link highlight ───
+const navAnchors = document.querySelectorAll('.nav-links a[href^="#"]');
+const pageSections = [...navAnchors]
+    .map(a => document.querySelector(a.getAttribute('href')))
+    .filter(Boolean);
+
+if (pageSections.length) {
+    const sectionObserver = new IntersectionObserver(
+        entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    navAnchors.forEach(a =>
+                        a.classList.toggle('active', a.getAttribute('href') === `#${entry.target.id}`)
+                    );
+                }
+            });
+        },
+        { threshold: 0.5 }
+    );
+    pageSections.forEach(s => sectionObserver.observe(s));
+}
+
 
 
 // ─── Mobile Navigation Toggle ───

@@ -36,7 +36,7 @@
 
 :root {
     /* Colors */
-    --color-bg: #050505;
+    --color-bg: #000000;
     --color-surface: rgba(255, 255, 255, 0.05);
     --color-surface-hover: rgba(255, 255, 255, 0.1);
     --color-text-primary: #ffffff;
@@ -45,9 +45,7 @@
     /* Vibrant Navy Blue */
     --color-accent-glow: rgba(0, 68, 255, 0.5);
 
-    /* Base numeric hue for Houdini Particle Worklet */
-    --particle-hue: 224;
-    /* Vibrant Navy Blue */
+
 
     /* Typography */
     --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
@@ -64,14 +62,7 @@
     --transition-fast: 200ms ease;
     --transition-medium: 400ms ease;
 
-    /* Houdini & Particles Defaults */
-    --ring-radius: 570;
-    --ring-thickness: 0;
-    --particle-count: 600;
-    --particle-rows: 45;
-    --particle-color: var(--color-accent);
-    --particle-size: 3;
-    --animation-tick: 0;
+
 
     /* Terminal / Console Theme */
     --terminal-bg: rgba(8, 12, 20, 0.85);
@@ -103,8 +94,6 @@ body.light-mode {
     --color-text-secondary: #4a4a4a;
     --color-accent: #0022aa;
     --color-accent-glow: rgba(0, 34, 170, 0.3);
-    --particle-hue: 228;
-
     /* Terminal overrides for light mode */
     --terminal-bg: rgba(240, 244, 248, 0.92);
     --terminal-border: rgba(0, 120, 80, 0.15);
@@ -128,12 +117,7 @@ body.light-mode {
         --spacing-lg: 2rem;
         --spacing-xl: 4rem;
 
-        /* Optimize Particles for Mobile Performance */
-        /* Heavily target mobile GPU by slashing total paths needed */
-        --ring-radius: 350;
-        --particle-count: 300;
-        --particle-rows: 25;
-        --particle-size: 2.5;
+
     }
 }
 
