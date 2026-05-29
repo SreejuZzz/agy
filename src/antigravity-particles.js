@@ -586,12 +586,12 @@ export class AntigravityParticles {
     // ── Autonomous noise drift — smooth multi-frequency sinusoids ─────
     // Approximates the Simplex noise.getVal() from the original
     const t = this.time;
-    const nx = Math.sin(t * 0.66 * 0.847 + 94.234) * 0.6
-             + Math.sin(t * 0.31  + 17.81) * 0.25
-             + Math.sin(t * 0.13  + 44.2)  * 0.15;
-    const ny = Math.cos(t * 0.75 * 0.916 + 21.028) * 0.6
-             + Math.cos(t * 0.41  + 33.5)  * 0.25
-             + Math.cos(t * 0.19  + 61.9)  * 0.15;
+    const nx = Math.sin(t * 0.56 * 0.847 + 94.234) * 0.6
+             + Math.sin(t * 0.264  + 17.81) * 0.25
+             + Math.sin(t * 0.11  + 44.2)  * 0.15;
+    const ny = Math.cos(t * 0.638 * 0.916 + 21.028) * 0.6
+             + Math.cos(t * 0.349  + 33.5)  * 0.25
+             + Math.cos(t * 0.162  + 61.9)  * 0.15;
 
     // ── Raycasting (every other frame — exact from source) ────────────
     this._skipFrame = !this._skipFrame;

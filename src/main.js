@@ -8,7 +8,7 @@ if (particlesContainer) {
     const isMobile = window.innerWidth <= 768;
     const particles = new AntigravityParticles(particlesContainer, {
         theme:            'dark',  // always use the vivid dark palette
-        density:          isMobile ? 320 : 280,    // slightly higher density on mobile
+        density:          isMobile ? 282 : 246,    // ~12% less than original (320/280)
         particlesScale:   isMobile ? 1.5 : 0.75,   // scaled up for crisp visibility on mobile
         cameraZoom:       isMobile ? 3.5 : 3.1,    // zoom out slightly on mobile so the ring fits perfectly on the screen
         ringWidth:        isMobile ? 0.20 : 0.15,  // wider ring on mobile to stand out
@@ -167,7 +167,7 @@ if (themeBtn) {
 
 // ─── Card Mouse Tracking for Glow Effect ───
 document.addEventListener('mousemove', e => {
-    const card = e.target.closest('.card, .project-card, .bento-card, .traverse-card');
+    const card = e.target.closest('.card, .project-card, .bento-card, .traverse-card, .skill-group');
     if (!card) return;
 
     if (!card._rectCache || e.timeStamp - (card._rectTime || 0) > 500) {
@@ -184,74 +184,96 @@ document.addEventListener('mousemove', e => {
 // ─── DevOps Console: Experience Timeline ───
 const MILESTONE_DATA = [
     {
-        command: 'cat /var/log/career/synnefo.log',
+        command: 'cat /var/log/career/synnefo-senior.log',
         lines: [
             { type: 'info', text: '╔══════════════════════════════════════════════╗' },
-            { type: 'info', text: '║  DEPLOYMENT LOG: Synnefo Solutions           ║' },
+            { type: 'info', text: '║  Synnefo Solutions, Ernakulam                ║' },
             { type: 'info', text: '║  Role: Senior DevOps Engineer                ║' },
-            { type: 'info', text: '║  Period: 2022 — Present                      ║' },
+            { type: 'info', text: '║  Period: 2025 — Present                      ║' },
             { type: 'info', text: '╚══════════════════════════════════════════════╝' },
             { type: 'output', text: '' },
-            { type: 'success', text: '✓ Architected multi-region AWS infrastructure' },
-            { type: 'success', text: '✓ Designed CI/CD pipelines (Jenkins, GitHub Actions)' },
-            { type: 'success', text: '✓ Managed 50+ Kubernetes production clusters' },
-            { type: 'success', text: '✓ Implemented Terraform IaC across 20+ accounts' },
-            { type: 'success', text: '✓ Achieved 99.99% uptime SLA for critical services' },
+            { type: 'success', text: '✓ Leading cloud architecture & DevOps strategy' },
+            { type: 'success', text: '✓ Managing multi-region AWS infrastructure at scale' },
+            { type: 'success', text: '✓ CI/CD orchestration: Jenkins, GitHub Actions' },
+            { type: 'success', text: '✓ Kubernetes cluster management (production)' },
+            { type: 'success', text: '✓ Terraform IaC across 20+ AWS accounts' },
+            { type: 'success', text: '✓ 99.99% uptime SLA for critical services' },
             { type: 'output', text: '' },
-            { type: 'output', text: 'Stack: AWS | Kubernetes | Terraform | Docker' },
-            { type: 'output', text: '       Jenkins | Prometheus | Grafana | Ansible' },
+            { type: 'output', text: 'Stack: AWS | K8s | Terraform | Docker | Jenkins' },
+            { type: 'output', text: '       Prometheus | Grafana | Ansible | ArgoCD' },
         ]
     },
     {
-        command: 'cat /var/log/career/cloud-architect.log',
+        command: 'cat /var/log/career/synnefo-jr-devops.log',
         lines: [
             { type: 'info', text: '╔══════════════════════════════════════════════╗' },
-            { type: 'info', text: '║  DEPLOYMENT LOG: Cloud Architecture Lead     ║' },
-            { type: 'info', text: '║  Period: 2020 — 2022                         ║' },
+            { type: 'info', text: '║  Synnefo Solutions, Ernakulam                ║' },
+            { type: 'info', text: '║  Role: Junior DevOps Engineer                ║' },
+            { type: 'info', text: '║  Period: 2024 — 2025                         ║' },
             { type: 'info', text: '╚══════════════════════════════════════════════╝' },
             { type: 'output', text: '' },
-            { type: 'success', text: '✓ Led 20+ zero-downtime cloud migrations' },
+            { type: 'success', text: '✓ Built and maintained CI/CD pipelines' },
+            { type: 'success', text: '✓ Containerised legacy applications using Docker' },
+            { type: 'success', text: '✓ Set up monitoring with Prometheus & Grafana' },
+            { type: 'success', text: '✓ Automated infrastructure provisioning with Ansible' },
+            { type: 'success', text: '✓ Supported Kubernetes workload migrations' },
+            { type: 'output', text: '' },
+            { type: 'output', text: 'Stack: Docker | Ansible | Prometheus | Grafana' },
+            { type: 'output', text: '       Jenkins | AWS | Git | Linux' },
+        ]
+    },
+    {
+        command: 'cat /var/log/career/synnefo-cloud-eng.log',
+        lines: [
+            { type: 'info', text: '╔══════════════════════════════════════════════╗' },
+            { type: 'info', text: '║  Synnefo Solutions, Ernakulam                ║' },
+            { type: 'info', text: '║  Role: Cloud Engineer                        ║' },
+            { type: 'info', text: '║  Period: 2022 — 2024                         ║' },
+            { type: 'info', text: '╚══════════════════════════════════════════════╝' },
+            { type: 'output', text: '' },
             { type: 'success', text: '✓ Designed HA architectures (multi-AZ, auto-scaling)' },
-            { type: 'success', text: '✓ Built monitoring dashboards (Prometheus + Grafana)' },
+            { type: 'success', text: '✓ Led 20+ zero-downtime cloud migrations' },
+            { type: 'success', text: '✓ Deployed and managed EC2, RDS, S3, VPC, IAM' },
             { type: 'success', text: '✓ Reduced infra costs by 40% via right-sizing' },
-            { type: 'success', text: '✓ Mentored 10+ engineers on cloud best practices' },
             { type: 'output', text: '' },
             { type: 'output', text: 'Stack: AWS | GCP | Terraform | CloudFormation' },
         ]
     },
     {
-        command: 'cat /var/log/certifications/rhcsa.log',
+        command: 'cat /var/log/career/synnefo-linux-admin.log',
         lines: [
-            { type: 'info', text: '╔══════════════════════════════════════════════╗' },
-            { type: 'info', text: '║  CERTIFICATION: RHCSA                        ║' },
-            { type: 'info', text: '║  ID: 250-136-470                             ║' },
-            { type: 'info', text: '║  Issued: 2019                                ║' },
-            { type: 'info', text: '╚══════════════════════════════════════════════╝' },
-            { type: 'output', text: '' },
-            { type: 'success', text: '✓ Red Hat Certified System Administrator' },
-            { type: 'success', text: '✓ Advanced Linux system management' },
-            { type: 'success', text: '✓ SELinux, firewall, storage, networking' },
-            { type: 'success', text: '✓ Shell scripting & process automation' },
-            { type: 'success', text: '✓ User & group management at enterprise scale' },
-            { type: 'output', text: '' },
-            { type: 'output', text: 'Verification: rhn.redhat.com/verify/250-136-470' },
+            { type: 'info',    text: '╔══════════════════════════════════════════════╗' },
+            { type: 'info',    text: '║  Synnefo Solutions, Ernakulam                ║' },
+            { type: 'info',    text: '║  Role: Linux Administrator                   ║' },
+            { type: 'info',    text: '║  Period: January 2020 — 2022                 ║' },
+            { type: 'info',    text: '╚══════════════════════════════════════════════╝' },
+            { type: 'output',  text: '' },
+            { type: 'success', text: '✓ Managed 100+ bare-metal & VM Linux servers' },
+            { type: 'success', text: '✓ Configured SELinux, iptables & fail2ban' },
+            { type: 'success', text: '✓ Automated provisioning with Bash & Ansible' },
+            { type: 'success', text: '✓ Built custom monitoring with Nagios + Bash' },
+            { type: 'success', text: '✓ Reduced deployment time by 70% via scripting' },
+            { type: 'output',  text: '' },
+            { type: 'output',  text: 'Stack: RHEL | CentOS | Bash | Ansible | Nagios' },
         ]
     },
     {
-        command: 'cat /var/log/career/linux-admin.log',
+        command: 'cat /var/log/career/sdc-networks.log',
         lines: [
-            { type: 'info', text: '╔══════════════════════════════════════════════╗' },
-            { type: 'info', text: '║  DEPLOYMENT LOG: Linux Systems Admin         ║' },
-            { type: 'info', text: '║  Period: 2018 — 2020                         ║' },
-            { type: 'info', text: '╚══════════════════════════════════════════════╝' },
-            { type: 'output', text: '' },
-            { type: 'success', text: '✓ Managed 100+ bare-metal & VM Linux servers' },
-            { type: 'success', text: '✓ Configured iptables, SELinux, fail2ban' },
-            { type: 'success', text: '✓ Automated server provisioning with Ansible' },
-            { type: 'success', text: '✓ Built custom monitoring with Nagios + Bash' },
-            { type: 'success', text: '✓ Reduced deployment time by 70% via scripting' },
-            { type: 'output', text: '' },
-            { type: 'output', text: 'Stack: RHEL | CentOS | Bash | Ansible | Nagios' },
+            { type: 'info',    text: '╔══════════════════════════════════════════════╗' },
+            { type: 'info',    text: '║  SDC Networks, Kaloor                        ║' },
+            { type: 'info',    text: '║  Role: Network Administrator                 ║' },
+            { type: 'info',    text: '║  Period: 2018 — 2020                         ║' },
+            { type: 'info',    text: '╚══════════════════════════════════════════════╝' },
+            { type: 'output',  text: '' },
+            { type: 'success', text: '✓ Managed routers, switches, firewalls & VPNs' },
+            { type: 'success', text: '✓ Built deep troubleshooting skills for L2/L3' },
+            { type: 'success', text: '✓ Maintained LAN/WAN infrastructure & cabling' },
+            { type: 'success', text: '✓ Network monitoring & incident response' },
+            { type: 'success', text: '✓ Configured VLANs, QoS & security policies' },
+            { type: 'output',  text: '' },
+            { type: 'output',  text: 'Stack: Cisco | MikroTik | pfSense | Wireshark' },
+            { type: 'output',  text: '       VLAN | VPN | BGP | OSPF | iptables' },
         ]
     }
 ];
@@ -448,3 +470,182 @@ if (contactForm && submitBtn) {
         }, 1400);
     });
 }
+
+// ─── Skills Section ───────────────────────────────────────────────────────────
+// Edit this data to update your skills in the future.
+const SKILLS_DATA = [
+    {
+        category: 'Cloud & Infrastructure',
+        icon: '☁️',
+        skills: ['AWS EC2', 'AWS S3', 'AWS VPC', 'AWS RDS', 'AWS IAM', 'AWS CloudWatch', 'Route 53', 'EKS', 'AWS SAA']
+    },
+    {
+        category: 'DevOps & CI/CD',
+        icon: '🔁',
+        skills: ['Kubernetes', 'Docker', 'Jenkins', 'GitHub Actions', 'ArgoCD', 'Terraform', 'Ansible', 'Helm']
+    },
+    {
+        category: 'Monitoring & Security',
+        icon: '📊',
+        skills: ['Prometheus', 'Grafana', 'Nagios', 'ELK Stack', 'fail2ban', 'SELinux', 'iptables', 'pfSense']
+    },
+    {
+        category: 'OS & Networking',
+        icon: '🖧',
+        skills: ['RHEL', 'CentOS', 'Ubuntu', 'Cisco', 'MikroTik', 'VLAN', 'VPN', 'BGP', 'OSPF', 'Wireshark']
+    },
+    {
+        category: 'Scripting & Automation',
+        icon: '⚙️',
+        skills: ['Bash', 'Shell Script', 'Python', 'YAML', 'JSON', 'Makefile', 'Cron', 'Systemd']
+    },
+    {
+        category: 'Certifications',
+        icon: '🏅',
+        skills: ['RHCSA (#250-136-470)', 'AWS SAA (Apr 2026)']
+    }
+];
+
+function renderSkills() {
+    const grid = document.getElementById('skills-grid');
+    if (!grid) return;
+
+    SKILLS_DATA.forEach(group => {
+        const groupEl = document.createElement('div');
+        groupEl.className = 'skill-group';
+
+        groupEl.innerHTML = `
+            <div class="skill-group-header">
+                <span class="skill-group-icon" aria-hidden="true">${group.icon}</span>
+                <h3 class="skill-group-title">${group.category}</h3>
+            </div>
+            <div class="skill-tags">
+                ${group.skills.map(s => `<span class="skill-tag">${s}</span>`).join('')}
+            </div>
+        `;
+        grid.appendChild(groupEl);
+    });
+}
+
+renderSkills();
+
+// ═══════════════════════════════════════════════════════════════
+// OPTION 2 — DEPTH CARD · About Section Interactions
+// ═══════════════════════════════════════════════════════════════
+
+(function initAboutSection() {
+    const aboutSection  = document.getElementById('about');
+    const mistEl        = document.getElementById('about-mist');
+    const glassCard     = document.getElementById('about-glass-card');
+    const chargeLine    = document.getElementById('about-charge-line');
+    const statNumbers   = document.querySelectorAll('.stat-number');
+
+    if (!aboutSection) return;
+
+    // ── 1. Mist drifts with mouse (inside the section) ──────────
+    let mistRaf = null;
+    let targetMistX = 60, targetMistY = 40;
+    let targetMistX2 = 30, targetMistY2 = 70;
+    let currentMistX = 60, currentMistY = 40;
+    let currentMistX2 = 30, currentMistY2 = 70;
+
+    function lerpMist() {
+        const ease = 0.045;
+        currentMistX  += (targetMistX  - currentMistX)  * ease;
+        currentMistY  += (targetMistY  - currentMistY)  * ease;
+        currentMistX2 += (targetMistX2 - currentMistX2) * ease;
+        currentMistY2 += (targetMistY2 - currentMistY2) * ease;
+
+        if (mistEl) {
+            mistEl.style.setProperty('--mist-x',  `${currentMistX.toFixed(2)}%`);
+            mistEl.style.setProperty('--mist-y',  `${currentMistY.toFixed(2)}%`);
+            mistEl.style.setProperty('--mist-x2', `${currentMistX2.toFixed(2)}%`);
+            mistEl.style.setProperty('--mist-y2', `${currentMistY2.toFixed(2)}%`);
+        }
+
+        mistRaf = requestAnimationFrame(lerpMist);
+    }
+    mistRaf = requestAnimationFrame(lerpMist);
+
+    document.addEventListener('mousemove', (e) => {
+        const rect = aboutSection.getBoundingClientRect();
+        // Only react while the about section is visible
+        if (rect.top > window.innerHeight || rect.bottom < 0) return;
+
+        const relX = ((e.clientX - rect.left) / rect.width)  * 100;
+        const relY = ((e.clientY - rect.top)  / rect.height) * 100;
+
+        targetMistX  = relX;
+        targetMistY  = relY;
+        targetMistX2 = 100 - relX * 0.7;
+        targetMistY2 = 100 - relY * 0.6;
+    }, { passive: true });
+
+    // ── 2. Glass card 3D tilt flattens as section scrolls to centre ──
+    function updateCardTilt() {
+        if (!glassCard) return;
+        const rect = aboutSection.getBoundingClientRect();
+        const centre = rect.top + rect.height / 2;
+        const viewCentre = window.innerHeight / 2;
+        // -1 (top) → 0 (centre) → +1 (bottom)
+        const progress = Math.max(-1, Math.min(1, (viewCentre - centre) / (rect.height * 0.6)));
+        // Tilt from 6deg (entering from top) → 0deg (at centre) → -2deg (past centre)
+        const tilt = progress < 0
+            ? 6 * (1 + progress)      // 6 → 0 as it scrolls to centre
+            : -2 * progress;           // 0 → -2 as it scrolls past
+
+        glassCard.style.setProperty('--card-tilt', `${tilt.toFixed(2)}deg`);
+        glassCard.style.transform = `perspective(900px) rotateX(${tilt.toFixed(2)}deg)`;
+    }
+
+    window.addEventListener('scroll', updateCardTilt, { passive: true });
+    updateCardTilt(); // init
+
+    // ── 3. Charge line fires when about section enters view ──────
+    let chargeTriggered = false;
+    const chargeObserver = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting && !chargeTriggered) {
+            chargeTriggered = true;
+            // Small delay so the card entrance animation completes first
+            setTimeout(() => {
+                if (chargeLine) chargeLine.classList.add('charged');
+            }, 600);
+        }
+    }, { threshold: 0.3 });
+
+    if (aboutSection) chargeObserver.observe(aboutSection);
+
+    // ── 4. Stat counter animation — counts up from 0 on enter ───
+    let statsTriggered = false;
+
+    function easeOutQuart(t) {
+        return 1 - Math.pow(1 - t, 4);
+    }
+
+    function animateCounter(el, target, duration = 1400) {
+        const start = performance.now();
+        function tick(now) {
+            const elapsed = now - start;
+            const t = Math.min(elapsed / duration, 1);
+            const value = Math.round(easeOutQuart(t) * target);
+            el.textContent = value;
+            if (t < 1) requestAnimationFrame(tick);
+            else el.textContent = target;
+        }
+        requestAnimationFrame(tick);
+    }
+
+    const statsObserver = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting && !statsTriggered) {
+            statsTriggered = true;
+            statNumbers.forEach((el, i) => {
+                const target = parseInt(el.dataset.target, 10);
+                setTimeout(() => animateCounter(el, target, 1400), i * 120);
+            });
+        }
+    }, { threshold: 0.4 });
+
+    const statsRow = document.querySelector('.about-stats-row');
+    if (statsRow) statsObserver.observe(statsRow);
+
+})();
