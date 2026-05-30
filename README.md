@@ -12,7 +12,7 @@ The hero background runs a particle ring using a CSS Houdini Paint Worklet — m
 
 The rest is fairly standard — scroll-driven animations, glassmorphism cards, dark/light toggle, Inter + Outfit fonts. All design tokens live in `tokens.css` so I'm not hunting through stylesheets to change a spacing value.
 
-The About/Experience/Skills sections have my actual background: 7 years in infrastructure, started at SDC Networks in Kaloor doing real network troubleshooting, moved through Linux admin → Cloud Engineer → DevOps at Synnefo Solutions in Ernakulam. RHCSA (#250-136-470) and AWS SAA certified. Also been mentoring 700+ students across networking, Linux, cloud, and DevOps at Synnefo — which is what I spend most of my time on now.
+The About/Experience/Skills sections have my actual background: 7 years in infrastructure, started at SDC Networks in Kaloor doing real network troubleshooting, moved through Linux admin → Cloud Engineer → DevOps at Synnefo Solutions in Ernakulam. RHCSA and AWS SAA certified. Also been mentoring 700+ students across networking, Linux, cloud, and DevOps at Synnefo — which is what I spend most of my time on now.
 
 Work section links to my public repos (devops-tasks, linux-tasks, shell).
 
