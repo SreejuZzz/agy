@@ -1,0 +1,551 @@
+/* ════════════════════════════════════════════════════════════════════
+   IGLOO-INSPIRED ABOUT SECTION  ·  www.igloo.inc
+   Arctic matte-black void · glassmorphism cards · fine slate borders
+   Glowing ice-cyan accents · Responsive scroll triggers
+   ════════════════════════════════════════════════════════════════════ */
+
+.beagle-about {
+    /* ── CSS Custom Properties (Dark Arctic Void Default) ── */
+    --ig-bg:           #08090c;
+    --ig-card-bg:      rgba(15, 17, 23, 0.70);
+    --ig-border:       rgba(56, 62, 78, 0.35);
+    --ig-border-hover: rgba(0, 242, 254, 0.45);
+    --ig-t1:           #e2e5ec;                  /* light steel-grey */
+    --ig-t2:           #8a929e;                  /* muted cool grey */
+    --ig-accent:       #00f2fe;                  /* ice-cyan glow */
+    --ig-accent-glow:  rgba(0, 242, 254, 0.14);
+    --ig-grain-mix:    overlay;
+    --ig-grain-op:     0.45;
+    --ig-rule-color:   rgba(0, 242, 254, 0.28);
+
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    background: 
+        radial-gradient(circle 800px at 15% 20%, rgba(22, 28, 42, 0.75) 0%, transparent 80%),
+        radial-gradient(circle 600px at 85% 80%, rgba(0, 242, 254, 0.03) 0%, transparent 70%),
+        var(--ig-bg);
+    transition: background 0.4s ease;
+    padding: clamp(4rem, 8vw, 8rem) 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* ── LIGHT MODE overrides (Pristine Glacier-White) ── */
+body.light-mode .beagle-about {
+    --ig-bg:           #f5f7fb;
+    --ig-card-bg:      rgba(255, 255, 255, 0.85);
+    --ig-border:       rgba(56, 62, 78, 0.12);
+    --ig-border-hover: rgba(0, 150, 199, 0.45);
+    --ig-t1:           #1e2229;                  /* deep slate-black */
+    --ig-t2:           #58606e;                  /* steel-grey */
+    --ig-accent:       #0096c7;                  /* cold deep navy/blue */
+    --ig-accent-glow:  rgba(0, 150, 199, 0.08);
+    --ig-grain-mix:    multiply;
+    --ig-grain-op:     0.18;
+    --ig-rule-color:   rgba(0, 150, 199, 0.22);
+
+    background:
+        radial-gradient(circle 800px at 15% 20%, rgba(220, 228, 242, 0.75) 0%, transparent 80%),
+        radial-gradient(circle 600px at 85% 80%, rgba(0, 150, 199, 0.04) 0%, transparent 70%),
+        var(--ig-bg);
+}
+
+/* ── Grain texture overlay ── */
+.ba-grain {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: var(--ig-grain-op);
+    mix-blend-mode: var(--ig-grain-mix);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.09'/%3E%3C/svg%3E");
+    background-size: 256px 256px;
+}
+
+/* ── High-performance particle canvas ── */
+.ba-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 1.5s ease;
+}
+.ba-canvas.visible {
+    opacity: 1;
+}
+
+/* ── Layout stage ── */
+.ba-stage {
+    position: relative;
+    z-index: 3;
+    width: 100%;
+    max-width: 1080px;
+    display: flex;
+    flex-direction: column;
+    gap: 3.5rem;
+}
+
+/* ────────────────────────────────────────────────────
+   ① HERO HEADLINE (High-contrast tech layout)
+   ──────────────────────────────────────────────────── */
+
+.ba-hero {
+    opacity: 0;
+    transform: translateY(35px);
+    transition: opacity 1s ease, transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ba-hero.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.ba-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 3.5px;
+    text-transform: uppercase;
+    color: var(--ig-accent);
+    margin-bottom: 1.2rem;
+}
+/* Cyber dot block in eyebrow */
+.ba-eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    background: var(--ig-accent);
+    border-radius: 50%;
+    box-shadow: 0 0 6px var(--ig-accent);
+}
+
+.ba-headline {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -2px;
+    line-height: 1.05;
+    margin: 0 0 2rem;
+}
+
+.ba-hl-line {
+    display: block;
+    font-size: clamp(1.6rem, 3.5vw, 2.8rem);
+    color: var(--ig-t1);
+    transform: skewX(-1deg);
+    margin-bottom: 0.3rem;
+}
+
+/* Technical Monospace Sub-Headline */
+.ba-subheadline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.2rem;
+    font-family: var(--font-mono);
+    font-size: clamp(0.8rem, 1.8vw, 0.95rem);
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ig-t2);
+    margin: 1rem 0 2rem;
+    opacity: 0;
+    transform: translateY(15px);
+    transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ba-hero.visible .ba-subheadline {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.28s;
+}
+
+.ba-sub-part {
+    display: inline-flex;
+    align-items: center;
+    gap: 1.2rem;
+}
+
+.ba-sub-part:not(:last-child)::after {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    background: var(--ig-border);
+    border-radius: 50%;
+}
+
+
+.ba-hl-accent {
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(182, 186, 197, 0.45);
+    background: linear-gradient(135deg, var(--ig-accent) 0%, rgba(182, 186, 197, 0.95) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 40px var(--ig-accent-glow);
+}
+body.light-mode .ba-hl-accent {
+    -webkit-text-stroke: 0px;
+    background: linear-gradient(135deg, var(--ig-accent) 0%, #005c8a 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+}
+
+/* Technical neon horizontal line */
+.ba-rule {
+    height: 1px;
+    width: 0%;
+    background: linear-gradient(90deg, 
+        var(--ig-accent) 0%, 
+        var(--ig-border) 60%, 
+        transparent 100%);
+    transition: width 1.6s cubic-bezier(0.16, 1, 0.3, 1);
+    border-radius: 99px;
+    box-shadow: 0 0 8px var(--ig-accent-glow);
+}
+.ba-rule.charged {
+    width: 100%;
+}
+
+/* ────────────────────────────────────────────────────
+   ② GLASSMORPHIC CARD PAIR
+   ──────────────────────────────────────────────────── */
+
+.ba-cards {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 1.5rem;
+    opacity: 0;
+    transform: translateY(35px);
+    transition: opacity 1s ease 0.15s, transform 1s cubic-bezier(0.16, 1, 0.3, 1) 0.15s;
+}
+.ba-cards.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.ba-card {
+    padding: clamp(1.8rem, 4vw, 2.8rem);
+    background: var(--ig-card-bg);
+    backdrop-filter: blur(16px) saturate(110%);
+    -webkit-backdrop-filter: blur(16px) saturate(110%);
+    border: 1px solid var(--ig-border);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    position: relative;
+    overflow: hidden;
+    transition: 
+        border-color 0.4s ease, 
+        transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+        box-shadow 0.4s ease;
+}
+
+/* Interactive hover triggers */
+.ba-card:hover {
+    border-color: var(--ig-border-hover);
+    transform: translateY(-5px) scale(1.008);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25), 0 0 15px var(--ig-accent-glow);
+}
+
+/* Subtle corner tech tick marks */
+.ba-card::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 8px;
+    height: 8px;
+    border-top: 1.5px solid var(--ig-border);
+    border-right: 1.5px solid var(--ig-border);
+    pointer-events: none;
+    transition: border-color 0.4s ease;
+}
+.ba-card:hover::before {
+    border-color: var(--ig-accent);
+}
+
+/* Fine tech grid background mesh */
+.ba-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.02;
+    background-image: 
+        linear-gradient(rgba(182, 186, 197, 0.3) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(182, 186, 197, 0.3) 1px, transparent 1px);
+    background-size: 15px 15px;
+    z-index: -1;
+    transition: opacity 0.4s ease;
+}
+.ba-card:hover::after {
+    opacity: 0.05;
+}
+
+.ba-card-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 3.5px;
+    text-transform: uppercase;
+    color: var(--ig-accent);
+    margin-bottom: 0.1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.ba-card-label::after {
+    content: '';
+    height: 1px;
+    flex-grow: 1;
+    background: var(--ig-border);
+    transition: background 0.4s ease;
+}
+.ba-card:hover .ba-card-label::after {
+    background: var(--ig-rule-color);
+}
+
+.ba-card-text {
+    font-size: clamp(0.9rem, 1.25vw, 1.02rem);
+    line-height: 1.8;
+    color: var(--ig-t2);
+    margin: 0;
+}
+.ba-card-text strong {
+    color: var(--ig-t1);
+    font-weight: 600;
+}
+
+/* Cert Badges */
+.ba-certs {
+    margin-top: auto;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--ig-border);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.ba-cert {
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-size: 0.81rem;
+    font-weight: 500;
+    color: var(--ig-t2);
+    padding: 0.6rem 0;
+    border-bottom: 1px solid rgba(56, 62, 78, 0.15);
+    letter-spacing: 0.15px;
+    transition: color 0.3s ease, border-color 0.3s ease;
+    position: relative;
+}
+.ba-cert:last-child {
+    border-bottom: none;
+}
+.ba-cert:hover {
+    color: var(--ig-t1);
+    border-color: var(--ig-border-hover);
+}
+
+.ba-cert-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--ig-border);
+    flex-shrink: 0;
+    transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+.ba-cert:hover .ba-cert-dot {
+    background: var(--ig-accent);
+    transform: scale(1.5);
+    box-shadow: 0 0 6px var(--ig-accent);
+}
+.ba-cert strong {
+    color: var(--ig-t1);
+}
+
+.ba-cert-arrow {
+    margin-left: auto;
+    font-size: 0.65rem;
+    opacity: 0.3;
+    transition: opacity 0.3s ease, transform 0.3s ease, color 0.3s ease;
+}
+.ba-cert:hover .ba-cert-arrow {
+    opacity: 0.85;
+    transform: translate(3px, -3px);
+    color: var(--ig-accent);
+}
+
+/* ────────────────────────────────────────────────────
+   ③ DIGITAL STAT ROW
+   ──────────────────────────────────────────────────── */
+
+.ba-stats {
+    display: flex;
+    align-items: stretch;
+    border-top: 1px solid var(--ig-border);
+    border-bottom: 1px solid var(--ig-border);
+    padding: clamp(1.5rem, 3vw, 2.5rem) 0;
+    opacity: 0;
+    transform: translateY(35px);
+    transition: opacity 1s ease 0.3s, transform 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s;
+}
+.ba-stats.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.ba-stat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0rem;
+    padding: 0 0.5rem;
+    cursor: default;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ba-stat:hover {
+    transform: translateY(-5px);
+}
+
+.ba-stat-value {
+    display: inline-flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 2px;
+}
+
+.ba-divider {
+    width: 1px;
+    background: var(--ig-border);
+    flex-shrink: 0;
+    align-self: stretch;
+}
+
+.ba-stat-num {
+    font-family: var(--font-display);
+    font-size: clamp(2.4rem, 5vw, 4.2rem);
+    font-weight: 800;
+    letter-spacing: -2px;
+    line-height: 1;
+    display: inline-block;
+    color: var(--ig-t1);
+    transition: color 0.3s ease;
+}
+.ba-stat:hover .ba-stat-num {
+    color: var(--ig-accent);
+    text-shadow: 0 0 15px var(--ig-accent-glow);
+}
+
+.ba-stat-plus {
+    font-family: var(--font-display);
+    font-size: clamp(1.2rem, 2vw, 1.8rem);
+    font-weight: 700;
+    color: var(--ig-accent);
+    margin-left: 2px;
+}
+.ba-stat-lbl {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--ig-t2);
+    margin-top: -0.1rem;
+    text-align: center;
+    transition: color 0.3s ease;
+}
+.ba-stat:hover .ba-stat-lbl {
+    color: var(--ig-t1);
+}
+
+/* ── Responsive adjustments ── */
+@media (max-width: 860px) {
+    .ba-cards {
+        grid-template-columns: 1fr;
+        gap: 1.2rem;
+    }
+    .ba-headline {
+        letter-spacing: -1.2px;
+    }
+}
+
+@media (max-width: 640px) {
+    .ba-stats {
+        flex-wrap: wrap;
+        padding: 1rem 0;
+    }
+    .ba-stat {
+        flex: 1 1 45%;
+        padding: 0.8rem 0.5rem;
+    }
+    .ba-divider {
+        display: none;
+    }
+    .ba-hl-line {
+        font-size: clamp(1.3rem, 6vw, 2rem);
+        letter-spacing: -0.6px;
+    }
+}
+
+/* ────────────────────────────────────────────────────
+   ④ "MY APPROACH" PILLARS GRID
+   ──────────────────────────────────────────────────── */
+
+.ba-approach-section {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.8rem;
+    opacity: 0;
+    transform: translateY(35px);
+    transition: opacity 1s ease 0.4s, transform 1s cubic-bezier(0.16, 1, 0.3, 1) 0.4s;
+}
+.ba-approach-section.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.ba-approach-header {
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.ba-approach-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 3.5vw, 2.5rem);
+    font-weight: 800;
+    letter-spacing: -1.2px;
+    color: var(--ig-t1);
+    margin: 0;
+}
+
+.ba-approach-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+.ba-approach-card {
+    height: 100%;
+}
+
+@media (max-width: 860px) {
+    .ba-approach-grid {
+        grid-template-columns: 1fr;
+        gap: 1.2rem;
+    }
+}
+

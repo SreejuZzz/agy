@@ -87,7 +87,7 @@
 }
 
 body.light-mode {
-    --color-bg: #e0e0e0;
+    --color-bg: #ffffff;
     --color-surface: rgba(255, 255, 255, 0.4);
     --color-surface-hover: rgba(255, 255, 255, 0.6);
     --color-text-primary: #1d1d1f;
@@ -137,13 +137,14 @@ body {
     line-height: 1.5;
     overflow-x: hidden;
     transition:
-        --color-surface 0.8s ease,
-        --color-surface-hover 0.8s ease,
-        --color-text-primary 0.8s ease,
-        --color-text-secondary 0.8s ease,
-        --color-accent 0.8s ease,
-        --color-accent-glow 0.8s ease,
-        color 0.8s ease;
+        background-color 0.4s linear,
+        color 0.4s linear,
+        --color-surface 0.4s linear,
+        --color-surface-hover 0.4s linear,
+        --color-text-primary 0.4s linear,
+        --color-text-secondary 0.4s linear,
+        --color-accent 0.4s linear,
+        --color-accent-glow 0.4s linear;
 }
 
 html {

@@ -19,15 +19,35 @@
     <link rel="preload"
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@700&family=JetBrains+Mono:wght@400;500&display=swap"
         as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <script>
+        // Prevent Flash of Unstyled Content (FOUC) during reload/refresh
+        document.documentElement.style.visibility = 'hidden';
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.style.backgroundColor = '#ffffff';
+        } else {
+            document.documentElement.style.backgroundColor = '#000000';
+        }
+    </script>
     <noscript>
         <link
             href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@700&family=JetBrains+Mono:wght@400;500&display=swap"
             rel="stylesheet">
+        <style>
+            html { visibility: visible !important; }
+        </style>
     </noscript>
 </head>
 
 <body>
-    <div id="app">
+    <script>
+        // Inline theme initialization to prevent color transitions/flashes during page load
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-mode');
+        }
+    </script>
+
+
+<div id="app">
         <header class="main-header">
             <nav aria-label="Primary navigation">
                 <a href="#home" class="logo" aria-label="Home">
@@ -52,20 +72,20 @@
                     <li><a href="#portal-contact">Contact</a></li>
                 </ul>
 
-                <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark and light mode">
-                    <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <circle cx="12" cy="12" r="5" />
-                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-                    </svg>
-                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                    </svg>
-                </button>
             </nav>
+            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark and light mode">
+                <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="5" />
+                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                </svg>
+                <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                </svg>
+            </button>
         </header>
 
 
@@ -82,80 +102,106 @@
                 </div>
             </section>
 
-            <section id="about" class="snap-section about">
+                                                                                    <section id="about" class="snap-section beagle-about">
+                <!-- Arctic textured grain layer -->
+                <div class="ba-grain" aria-hidden="true"></div>
 
-                <!-- Drifting radial mist — reacts to mouse -->
-                <div class="about-mist" id="about-mist" aria-hidden="true"></div>
+                <!-- Canvas: interactive ice constellation particles -->
+                <canvas id="ba-canvas" class="ba-canvas" aria-hidden="true"></canvas>
 
-                <div class="content about-content">
+                <!-- Stage -->
+                <div class="ba-stage">
 
-                    <!-- ══ Main glass hero card ══ -->
-                    <div class="about-glass-card" id="about-glass-card">
+                    <!-- Hero: Statement line -->
+                    <div class="ba-hero" id="ba-hero">
+                        <div class="ba-eyebrow">About</div>
+                        <h2 class="ba-headline">
+                            <span class="ba-hl-line" style="--i:0">I build the engines that keep the cloud running.</span>
+                        </h2>
+                        
+                        <!-- Technical Monospace Sub-Headline -->
+                        <div class="ba-subheadline" id="ba-subheadline">
+                            <span class="ba-sub-part">7 years.</span>
+                            <span class="ba-sub-part">4 roles.</span>
+                            <span class="ba-sub-part">One obsession: <span class="ba-hl-accent">uptime.</span></span>
+                        </div>
+                        
+                        <div class="ba-rule" id="ba-rule" aria-hidden="true"></div>
+                    </div>
 
-                        <div class="about-bio-grid">
-
-                            <!-- Left: large cinematic pull-quote -->
-                            <div class="about-pullquote-col">
-                                <p class="about-pullquote">"7 years.<br>4 roles.<br>One obsession:<br><em>uptime.</em>"</p>
-                                <!-- Charging horizontal rule -->
-                                <div class="about-charge-line" id="about-charge-line" aria-hidden="true"></div>
+                    <!-- Bio block: two primary cards -->
+                    <div class="ba-cards" id="ba-cards">
+                        <div class="ba-card ba-card-main">
+                            <p class="ba-card-label">The journey</p>
+                            <p class="ba-card-text">I started my career getting my hands dirty with real network problems at <strong>SDC Networks, Kaloor</strong> — and that foundation of deep troubleshooting has shaped everything I've done since.</p>
+                            <p class="ba-card-text">Over the past seven years, I've grown from Network Administrator to <strong>Senior DevOps Engineer and Cloud Architect at Synnefo Solutions, Ernakulam</strong>, moving through Linux administration, cloud engineering, and full DevOps practice along the way.</p>
+                        </div>
+                        <div class="ba-card ba-card-side">
+                            <p class="ba-card-label">The mission</p>
+                            <p class="ba-card-text">Alongside that, I've mentored <strong>over 700 students</strong> across networking, Linux, cloud, and DevOps — consistently earning high ratings not because I follow a syllabus, but because I teach what the job actually looks like.</p>
+                            <!-- Cert badges -->
+                            <div class="ba-certs">
+                                <a href="https://www.credly.com/users/sreejith-sreenivas.cb006ffc/badges#credly"
+                                   target="_blank" rel="noopener noreferrer"
+                                   class="ba-cert" aria-label="Verify RHCSA on Credly">
+                                    <span class="ba-cert-dot"></span>
+                                    <span>RHCSA &mdash; <strong>#250-136-470</strong></span>
+                                    <span class="ba-cert-arrow">&#8599;</span>
+                                </a>
+                                <a href="https://www.credly.com/users/sreejith-sreenivas.cb006ffc/badges#credly"
+                                   target="_blank" rel="noopener noreferrer"
+                                   class="ba-cert" aria-label="Verify AWS SAA on Credly">
+                                    <span class="ba-cert-dot"></span>
+                                    <span>AWS SAA &mdash; <strong>April 2026</strong></span>
+                                    <span class="ba-cert-arrow">&#8599;</span>
+                                </a>
                             </div>
+                        </div>
+                    </div>
 
-                            <!-- Right: narrative -->
-                            <div class="about-narrative-col">
-                                <p><strong>I build the engines that keep the cloud running.</strong> As a Senior DevOps Engineer and Cloud Architect at Synnefo Solutions, Ernakulam, my obsession is turning chaotic, manual deployments into sleek, automated, zero-downtime pipelines.</p>
-                                <p>From deep-in-the-trenches network administration at SDC Networks to architecting highly available Kubernetes clusters on AWS — I've lived every layer of the stack. When I'm not writing Terraform or tightening security protocols, I'm passing on knowledge: <strong>700+ students</strong> mentored in Linux, DevOps, Networking &amp; Cloud since 2018 with consistently top ratings.</p>
+                    <!-- Stats row: large digital numbers -->
+                    <div class="ba-stats" id="ba-stats">
+                        <div class="ba-stat" style="--si:0">
+                            <div class="ba-stat-value">
+                                <span class="ba-stat-num" data-target="7">0</span><span class="ba-stat-plus">+</span>
                             </div>
+                            <span class="ba-stat-lbl">Years Experience</span>
+                        </div>
+                        <div class="ba-divider" aria-hidden="true"></div>
+                        <div class="ba-stat" style="--si:1">
+                            <div class="ba-stat-value">
+                                <span class="ba-stat-num" data-target="700">0</span><span class="ba-stat-plus">+</span>
+                            </div>
+                            <span class="ba-stat-lbl">Students Mentored</span>
+                        </div>
+                        <div class="ba-divider" aria-hidden="true"></div>
+                        <div class="ba-stat" style="--si:2">
+                            <div class="ba-stat-value">
+                                <span class="ba-stat-num" data-target="2018">0</span>
+                            </div>
+                            <span class="ba-stat-lbl">Career Journey Start</span>
+                        </div>
+                    </div>
 
+                    <!-- My Approach Pillars -->
+                    <div class="ba-approach-section" id="ba-approach">
+                        <div class="ba-approach-header">
+                            <p class="ba-card-label">My Philosophy</p>
+                            <h3 class="ba-approach-title">My Approach</h3>
                         </div>
-
-                        <!-- Foil cert badges — link to Credly profile -->
-                        <div class="about-certs-row">
-                            <a  href="https://www.credly.com/users/sreejith-sreenivas.cb006ffc/badges#credly"
-                                target="_blank" rel="noopener noreferrer"
-                                class="cert-badge about-cert-badge"
-                                aria-label="View RHCSA certification on Credly">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                    aria-hidden="true">
-                                    <circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
-                                </svg>
-                                <span>RHCSA &mdash; <strong>#250-136-470</strong></span>
-                                <span class="cert-verify-tag">&#8599; Verify</span>
-                            </a>
-                            <a  href="https://www.credly.com/users/sreejith-sreenivas.cb006ffc/badges#credly"
-                                target="_blank" rel="noopener noreferrer"
-                                class="cert-badge about-cert-badge"
-                                aria-label="View AWS SAA certification on Credly">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                    aria-hidden="true">
-                                    <circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
-                                </svg>
-                                <span>AWS SAA &mdash; <strong>April 2026</strong></span>
-                                <span class="cert-verify-tag">&#8599; Verify</span>
-                            </a>
-                        </div>
-
-                    </div><!-- /about-glass-card -->
-
-                    <!-- ══ Floating stat cards — bob independently ══ -->
-                    <div class="about-stats-row">
-                        <div class="about-stat-card">
-                            <span class="stat-number" data-target="50">0</span><span class="stat-unit">+</span>
-                            <span class="stat-label">Projects</span>
-                        </div>
-                        <div class="about-stat-card">
-                            <span class="stat-number" data-target="20">0</span><span class="stat-unit">+</span>
-                            <span class="stat-label">Cloud Migrations</span>
-                        </div>
-                        <div class="about-stat-card">
-                            <span class="stat-number" data-target="100">0</span><span class="stat-unit">+</span>
-                            <span class="stat-label">Deployments</span>
-                        </div>
-                        <div class="about-stat-card">
-                            <span class="stat-number" data-target="700">0</span><span class="stat-unit">+</span>
-                            <span class="stat-label">Students Mentored</span>
+                        <div class="ba-approach-grid">
+                            <div class="ba-card ba-approach-card">
+                                <p class="ba-card-label">01 // Real-world first</p>
+                                <p class="ba-card-text">Every concept is tied to a real scenario. What I teach, I've debugged in production — so you learn what actually matters.</p>
+                            </div>
+                            <div class="ba-card ba-approach-card">
+                                <p class="ba-card-label">02 // Meet you where you are</p>
+                                <p class="ba-card-text">Whether you're a fresher or a working professional filling gaps, I adapt the depth to your level — not a fixed syllabus.</p>
+                            </div>
+                            <div class="ba-card ba-approach-card">
+                                <p class="ba-card-label">03 // Job-ready focus</p>
+                                <p class="ba-card-text">Certifications are milestones, not destinations. I focus on making you confident enough to walk into a role and contribute from day one.</p>
+                            </div>
                         </div>
                     </div>
 

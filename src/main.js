@@ -1,6 +1,10 @@
 import './styles/tokens.css';
 import './styles/main.css';
+import './styles/loader-about.css';
 import { AntigravityParticles } from './antigravity-particles.js';
+
+// Reveal the document once main JS and styles have loaded
+document.documentElement.style.visibility = 'visible';
 
 // ─── Antigravity.google WebGL Particle System ───
 const particlesContainer = document.querySelector('.particles-bg');
@@ -8,7 +12,7 @@ if (particlesContainer) {
     const isMobile = window.innerWidth <= 768;
     const particles = new AntigravityParticles(particlesContainer, {
         theme:            'dark',  // always use the vivid dark palette
-        density:          isMobile ? 282 : 246,    // ~12% less than original (320/280)
+        density:          isMobile ? 65 : 246,    // Optimized for mobile WebGL performance
         particlesScale:   isMobile ? 1.5 : 0.75,   // scaled up for crisp visibility on mobile
         cameraZoom:       isMobile ? 3.5 : 3.1,    // zoom out slightly on mobile so the ring fits perfectly on the screen
         ringWidth:        isMobile ? 0.20 : 0.15,  // wider ring on mobile to stand out
@@ -119,44 +123,52 @@ if (hamburger && navLinks) {
     });
 }
 
-// ─── Theme Toggle ───
+// ─── Theme Toggle with Circular Clip-Path Transition ───
 const themeBtn = document.getElementById('theme-toggle');
 if (themeBtn) {
-    themeBtn.addEventListener('click', () => {
+    themeBtn.addEventListener('click', (event) => {
         const isDark = !document.body.classList.contains('light-mode');
-        const oldColor = isDark ? '#050505' : '#e0e0e0';
-        const targetColor = isDark ? '#e0e0e0' : '#050505';
+        const nextTheme = isDark ? 'light' : 'dark';
 
+        // Detect support for View Transitions and prefers-reduced-motion preference
+        const useTransition = document.startViewTransition && 
+            !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        if (!useTransition) {
+            // Non-supporting browsers utilize ultra-smooth GPU-accelerated CSS color transitions
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('theme', nextTheme);
+            return;
+        }
+
+        // Get starting coordinates from click event or fallback to the button's center
         const rect = themeBtn.getBoundingClientRect();
-        const x = rect.left + rect.width / 2;
-        const y = rect.top + rect.height / 2;
+        const x = event.clientX ?? (rect.left + rect.width / 2);
+        const y = event.clientY ?? (rect.top + rect.height / 2);
 
+        // Compute the maximum radius needed to fully sweep the entire screen viewport
         const endRadius = Math.hypot(
-            Math.max(x, innerWidth - x),
-            Math.max(y, innerHeight - y)
+            Math.max(x, window.innerWidth - x),
+            Math.max(y, window.innerHeight - y)
         );
 
-        const ripple = document.createElement('div');
-        ripple.className = 'theme-ripple';
-        ripple.style.backgroundColor = targetColor;
-        document.body.appendChild(ripple);
-        document.body.style.backgroundColor = oldColor;
+        // Feed coordinates into CSS Custom Properties
+        document.documentElement.style.setProperty('--theme-toggle-x', `${x}px`);
+        document.documentElement.style.setProperty('--theme-toggle-y', `${y}px`);
+        document.documentElement.style.setProperty('--theme-toggle-r', `${endRadius}px`);
 
-        document.body.classList.toggle('light-mode');
-        localStorage.setItem('theme', isDark ? 'light' : 'dark');
+        // Disable standard transitions during theme switch to prevent reflow lag
+        document.documentElement.classList.add('switching-theme');
 
-        const animation = ripple.animate(
-            [
-                { clipPath: `circle(0px at ${x}px ${y}px)` },
-                { clipPath: `circle(${endRadius}px at ${x}px ${y}px)` }
-            ],
-            { duration: 800, easing: 'ease-in-out', fill: 'forwards' }
-        );
+        const transition = document.startViewTransition(() => {
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('theme', nextTheme);
+        });
 
-        animation.onfinish = () => {
-            document.body.style.backgroundColor = '';
-            ripple.remove();
-        };
+        // Clean up once transition is finished
+        transition.finished.finally(() => {
+            document.documentElement.classList.remove('switching-theme');
+        });
     });
 
     if (localStorage.getItem('theme') === 'light') {
@@ -529,123 +541,357 @@ function renderSkills() {
 
 renderSkills();
 
-// ═══════════════════════════════════════════════════════════════
-// OPTION 2 — DEPTH CARD · About Section Interactions
-// ═══════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════
+// IGLOO-INSPIRED ABOUT  ·  www.igloo.inc
+// Ice particle constellation canvas, digital text scramble decrypt,
+// and coordinated viewport transitions.
+// ════════════════════════════════════════════════════════════════════
+(function initIglooAbout() {
+    const section  = document.querySelector('.beagle-about');
+    if (!section) return;
 
-(function initAboutSection() {
-    const aboutSection  = document.getElementById('about');
-    const mistEl        = document.getElementById('about-mist');
-    const glassCard     = document.getElementById('about-glass-card');
-    const chargeLine    = document.getElementById('about-charge-line');
-    const statNumbers   = document.querySelectorAll('.stat-number');
+    const rule     = document.getElementById('ba-rule');
+    const baCanvas = document.getElementById('ba-canvas');
+    const statNums = document.querySelectorAll('.ba-stat-num');
+    const statsRow = document.querySelector('.ba-stats');
 
-    if (!aboutSection) return;
+    const heroBlock  = document.getElementById('ba-hero');
+    const cardsBlock = document.getElementById('ba-cards');
+    const statsBlock = document.getElementById('ba-stats');
+    const approachBlock = document.getElementById('ba-approach');
 
-    // ── 1. Mist drifts with mouse (inside the section) ──────────
-    let mistRaf = null;
-    let targetMistX = 60, targetMistY = 40;
-    let targetMistX2 = 30, targetMistY2 = 70;
-    let currentMistX = 60, currentMistY = 40;
-    let currentMistX2 = 30, currentMistY2 = 70;
+    // ── Digital Text Scramble Decrypt Engine ───────────────────────────
+    const SCRAMBLE_CHARS = "01[]|_x+&%$#@!~?*";
 
-    function lerpMist() {
-        const ease = 0.045;
-        currentMistX  += (targetMistX  - currentMistX)  * ease;
-        currentMistY  += (targetMistY  - currentMistY)  * ease;
-        currentMistX2 += (targetMistX2 - currentMistX2) * ease;
-        currentMistY2 += (targetMistY2 - currentMistY2) * ease;
+    function scrambleText(el, delay = 0) {
+        if (el.dataset.scrambling === "true") return;
+        el.dataset.scrambling = "true";
 
-        if (mistEl) {
-            mistEl.style.setProperty('--mist-x',  `${currentMistX.toFixed(2)}%`);
-            mistEl.style.setProperty('--mist-y',  `${currentMistY.toFixed(2)}%`);
-            mistEl.style.setProperty('--mist-x2', `${currentMistX2.toFixed(2)}%`);
-            mistEl.style.setProperty('--mist-y2', `${currentMistY2.toFixed(2)}%`);
-        }
+        const originalText = el.textContent;
+        const length = originalText.length;
+        let frame = 0;
+        const maxFrames = 25; // ~400ms at 60fps
 
-        mistRaf = requestAnimationFrame(lerpMist);
+        setTimeout(() => {
+            (function tick() {
+                let currentText = "";
+                for (let i = 0; i < length; i++) {
+                    if (originalText[i] === " " || originalText[i] === "\n") {
+                        currentText += originalText[i];
+                        continue;
+                    }
+                    const revealProgress = frame / maxFrames;
+                    if (i / length < revealProgress) {
+                        currentText += originalText[i];
+                    } else {
+                        currentText += SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
+                    }
+                }
+                el.textContent = currentText;
+
+                if (frame < maxFrames) {
+                    frame++;
+                    requestAnimationFrame(tick);
+                } else {
+                    el.textContent = originalText;
+                    el.dataset.scrambling = "false";
+                }
+            })();
+        }, delay);
     }
-    mistRaf = requestAnimationFrame(lerpMist);
 
-    document.addEventListener('mousemove', (e) => {
-        const rect = aboutSection.getBoundingClientRect();
-        // Only react while the about section is visible
-        if (rect.top > window.innerHeight || rect.bottom < 0) return;
+    // ── Stat Counters ──────────────────────────────────────────────────
+    let counted = false;
+    const easeOutQuart = t => 1 - Math.pow(1 - t, 4);
 
-        const relX = ((e.clientX - rect.left) / rect.width)  * 100;
-        const relY = ((e.clientY - rect.top)  / rect.height) * 100;
+    function countUp(el, target, ms, delay) {
+        setTimeout(() => {
+            const t0 = performance.now();
+            (function tick(now) {
+                const p = Math.min((now - t0) / ms, 1);
+                el.textContent = Math.round(easeOutQuart(p) * target);
+                if (p < 1) requestAnimationFrame(tick);
+                else el.textContent = target;
+            })(performance.now());
+        }, delay);
+    }
 
-        targetMistX  = relX;
-        targetMistY  = relY;
-        targetMistX2 = 100 - relX * 0.7;
-        targetMistY2 = 100 - relY * 0.6;
+    // ── Coordinated Scroll Entrance Observers ───────────────────────────
+    const entryObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const target = entry.target;
+
+                if (target === heroBlock && !target.classList.contains('visible')) {
+                    target.classList.add('visible');
+                    
+                    // Trigger text scrambles
+                    const eyebrow = target.querySelector('.ba-eyebrow');
+                    if (eyebrow) scrambleText(eyebrow, 0);
+
+                    const lines = target.querySelectorAll('.ba-hl-line');
+                    lines.forEach((line, i) => scrambleText(line, 150 + i * 120));
+
+                    const subParts = target.querySelectorAll('.ba-sub-part');
+                    subParts.forEach((part, i) => scrambleText(part, 350 + i * 150));
+
+                    // Charge neon rule
+                    setTimeout(() => rule && rule.classList.add('charged'), 600);
+                }
+
+                if (target === cardsBlock && !target.classList.contains('visible')) {
+                    target.classList.add('visible');
+
+                    const labels = target.querySelectorAll('.ba-card-label');
+                    labels.forEach((label, i) => scrambleText(label, i * 200));
+                }
+
+                if (target === statsBlock && !target.classList.contains('visible')) {
+                    target.classList.add('visible');
+
+                    const labels = target.querySelectorAll('.ba-stat-lbl');
+                    labels.forEach((label, i) => scrambleText(label, i * 150));
+
+                    if (!counted) {
+                        counted = true;
+                        statNums.forEach((el, i) => {
+                            scrambleText(el, i * 100);
+                            countUp(el, parseInt(el.dataset.target, 10), 1600, i * 120);
+                        });
+                    }
+                }
+
+                if (target === approachBlock && !target.classList.contains('visible')) {
+                    target.classList.add('visible');
+
+                    const labels = target.querySelectorAll('.ba-card-label');
+                    labels.forEach((label, i) => scrambleText(label, i * 150));
+
+                    const title = target.querySelector('.ba-approach-title');
+                    if (title) scrambleText(title, 200);
+                }
+            }
+        });
+    }, { threshold: 0.15 });
+
+    if (heroBlock) entryObserver.observe(heroBlock);
+    if (cardsBlock) entryObserver.observe(cardsBlock);
+    if (statsBlock) entryObserver.observe(statsBlock);
+    if (approachBlock) entryObserver.observe(approachBlock);
+
+    // ── Hover Scramble Triggers ─────────────────────────────────────────
+    document.querySelectorAll('.ba-card').forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            const lbl = card.querySelector('.ba-card-label');
+            if (lbl) scrambleText(lbl, 0);
+        });
+    });
+
+    document.querySelectorAll('.ba-stat').forEach(stat => {
+        stat.addEventListener('mouseenter', () => {
+            const lbl = stat.querySelector('.ba-stat-lbl');
+            if (lbl) scrambleText(lbl, 0);
+        });
+    });
+
+    document.querySelectorAll('.ba-sub-part').forEach(part => {
+        part.addEventListener('mouseenter', () => {
+            scrambleText(part, 0);
+        });
+    });
+
+    // ── Interactive Ice Particle Constellation Canvas ───────────────────
+    if (!baCanvas) return;
+    const ctx = baCanvas.getContext('2d');
+    let W, H, particles, rafId;
+    
+    const isLightMode = () => document.body.classList.contains('light-mode');
+    
+    // Mouse tracker relative to canvas
+    let mouse = { x: null, y: null, active: false };
+
+    section.addEventListener('mousemove', (e) => {
+        const rect = baCanvas.getBoundingClientRect();
+        mouse.x = e.clientX - rect.left;
+        mouse.y = e.clientY - rect.top;
+        mouse.active = true;
     }, { passive: true });
 
-    // ── 2. Glass card 3D tilt flattens as section scrolls to centre ──
-    function updateCardTilt() {
-        if (!glassCard) return;
-        const rect = aboutSection.getBoundingClientRect();
-        const centre = rect.top + rect.height / 2;
-        const viewCentre = window.innerHeight / 2;
-        // -1 (top) → 0 (centre) → +1 (bottom)
-        const progress = Math.max(-1, Math.min(1, (viewCentre - centre) / (rect.height * 0.6)));
-        // Tilt from 6deg (entering from top) → 0deg (at centre) → -2deg (past centre)
-        const tilt = progress < 0
-            ? 6 * (1 + progress)      // 6 → 0 as it scrolls to centre
-            : -2 * progress;           // 0 → -2 as it scrolls past
+    section.addEventListener('mouseleave', () => {
+        mouse.active = false;
+    }, { passive: true });
 
-        glassCard.style.setProperty('--card-tilt', `${tilt.toFixed(2)}deg`);
-        glassCard.style.transform = `perspective(900px) rotateX(${tilt.toFixed(2)}deg)`;
+    function resize() {
+        W = baCanvas.width  = section.offsetWidth;
+        H = baCanvas.height = section.offsetHeight;
     }
 
-    window.addEventListener('scroll', updateCardTilt, { passive: true });
-    updateCardTilt(); // init
-
-    // ── 3. Charge line fires when about section enters view ──────
-    let chargeTriggered = false;
-    const chargeObserver = new IntersectionObserver(([entry]) => {
-        if (entry.isIntersecting && !chargeTriggered) {
-            chargeTriggered = true;
-            // Small delay so the card entrance animation completes first
-            setTimeout(() => {
-                if (chargeLine) chargeLine.classList.add('charged');
-            }, 600);
-        }
-    }, { threshold: 0.3 });
-
-    if (aboutSection) chargeObserver.observe(aboutSection);
-
-    // ── 4. Stat counter animation — counts up from 0 on enter ───
-    let statsTriggered = false;
-
-    function easeOutQuart(t) {
-        return 1 - Math.pow(1 - t, 4);
+    function createParticles() {
+        // Dynamic density adjustment based on screen width
+        const count = W < 640 ? 45 : 125;
+        return Array.from({ length: count }, () => {
+            const baseVx = (Math.random() - 0.5) * 0.25;
+            const baseVy = (Math.random() - 0.5) * 0.25;
+            return {
+                x: Math.random() * W,
+                y: Math.random() * H,
+                r: Math.random() * 1.8 + 0.6,
+                vx: baseVx,
+                vy: baseVy,
+                baseVx: baseVx,
+                baseVy: baseVy,
+                charge: 0 // Velocity-responsive glow
+            };
+        });
     }
 
-    function animateCounter(el, target, duration = 1400) {
-        const start = performance.now();
-        function tick(now) {
-            const elapsed = now - start;
-            const t = Math.min(elapsed / duration, 1);
-            const value = Math.round(easeOutQuart(t) * target);
-            el.textContent = value;
-            if (t < 1) requestAnimationFrame(tick);
-            else el.textContent = target;
+    function renderLoop() {
+        ctx.clearRect(0, 0, W, H);
+        const light = isLightMode();
+
+        // Color profiles matching Igloo palettes
+        const particleBaseColor = light ? [88, 96, 110] : [56, 62, 78];     // Muted steel / slate grey
+        const particleActiveColor = light ? [0, 150, 199] : [0, 242, 254];   // Glowing ice-cyan
+        const linkColor = light ? "rgba(0, 150, 199, " : "rgba(0, 242, 254, ";
+
+        // 1. Physics update & drawing particles
+        particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+
+            // Restoring velocity parameters
+            p.vx += (p.baseVx - p.vx) * 0.04;
+            p.vy += (p.baseVy - p.vy) * 0.04;
+
+            // Proximity parameters to cursor
+            if (mouse.active) {
+                const dx = mouse.x - p.x;
+                const dy = mouse.y - p.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+
+                if (dist < 180) {
+                    // Magnetic attraction/repulsion fluid loop
+                    const force = (180 - dist) / 180;
+                    const angle = Math.atan2(dy, dx);
+
+                    // Pull particles closer to create dense nodes near the cursor
+                    p.vx += Math.cos(angle) * force * 0.24;
+                    p.vy += Math.sin(angle) * force * 0.24;
+                    p.charge = Math.min(1, p.charge + 0.07);
+                } else {
+                    p.charge = Math.max(0, p.charge - 0.02);
+                }
+            } else {
+                p.charge = Math.max(0, p.charge - 0.02);
+            }
+
+            // Boundary wrap-around
+            if (p.x < -10) p.x = W + 10;
+            if (p.x > W + 10) p.x = -10;
+            if (p.y < -10) p.y = H + 10;
+            if (p.y > H + 10) p.y = -10;
+
+            // Compute velocity-responsive color blending
+            const r_c = Math.round(particleBaseColor[0] + (particleActiveColor[0] - particleBaseColor[0]) * p.charge);
+            const g_c = Math.round(particleBaseColor[1] + (particleActiveColor[1] - particleBaseColor[1]) * p.charge);
+            const b_c = Math.round(particleBaseColor[2] + (particleActiveColor[2] - particleBaseColor[2]) * p.charge);
+
+            ctx.fillStyle = `rgb(${r_c}, ${g_c}, ${b_c})`;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        // 2. Proximity web linkages
+        for (let i = 0; i < particles.length; i++) {
+            const p1 = particles[i];
+
+            for (let j = i + 1; j < particles.length; j++) {
+                const p2 = particles[j];
+                const dx = p1.x - p2.x;
+                const dy = p1.y - p2.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+
+                if (dist < 95) {
+                    const alpha = ((95 - dist) / 95 * 0.13).toFixed(3);
+                    ctx.strokeStyle = `${linkColor}${alpha})`;
+                    ctx.lineWidth = 0.75;
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+                }
+            }
+
+            // Interactive linkages directly to cursor
+            if (mouse.active) {
+                const dxM = p1.x - mouse.x;
+                const dyM = p1.y - mouse.y;
+                const distM = Math.sqrt(dxM*dxM + dyM*dyM);
+
+                if (distM < 150) {
+                    const alphaM = ((150 - distM) / 150 * 0.16).toFixed(3);
+                    ctx.strokeStyle = `${linkColor}${alphaM})`;
+                    ctx.lineWidth = 0.9;
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(mouse.x, mouse.y);
+                    ctx.stroke();
+                }
+            }
         }
-        requestAnimationFrame(tick);
+
+        rafId = requestAnimationFrame(renderLoop);
     }
 
-    const statsObserver = new IntersectionObserver(([entry]) => {
-        if (entry.isIntersecting && !statsTriggered) {
-            statsTriggered = true;
-            statNumbers.forEach((el, i) => {
-                const target = parseInt(el.dataset.target, 10);
-                setTimeout(() => animateCounter(el, target, 1400), i * 120);
-            });
+    // Only run canvas animations while section is actively visible in viewport
+    let canvasObserverActive = false;
+    new IntersectionObserver(([e]) => {
+        if (e.isIntersecting && !canvasObserverActive) {
+            canvasObserverActive = true;
+            resize();
+            particles = createParticles();
+            baCanvas.classList.add('visible');
+            rafId = requestAnimationFrame(renderLoop);
+        } else if (!e.isIntersecting && canvasObserverActive) {
+            cancelAnimationFrame(rafId);
+            rafId = null;
+            canvasObserverActive = false;
         }
-    }, { threshold: 0.4 });
+    }, { threshold: 0.05 }).observe(section);
 
-    const statsRow = document.querySelector('.about-stats-row');
-    if (statsRow) statsObserver.observe(statsRow);
+    window.addEventListener('resize', () => { 
+        if (canvasObserverActive) {
+            resize(); 
+            particles = createParticles(); 
+        }
+    }, { passive: true });
 
 })();
+
+
+// ─── High-Performance Scroll Reveal Intersection Observer (for Mobile & Desktop) ───
+(function initScrollReveal() {
+    const elements = document.querySelectorAll(
+        '.snap-section h2, .snap-section .section-subtitle, .snap-section .work-subtitle, .card, .project-card, .bento-card, .timeline-node, .experience, .social-link, .contact-form, .contact-terminal, .skills-grid, .traverse-card'
+    );
+
+    if (!elements.length) return;
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('revealed');
+                // Once revealed, unobserve to conserve mobile CPU cycles
+                observer.unobserve(entry.target);
+            }
+        });
+    }, {
+        threshold: 0.08,               // Trigger when 8% is visible
+        rootMargin: '0px 0px -40px 0px' // Reveal slightly before crossing screen line
+    });
+
+    elements.forEach(el => observer.observe(el));
+})();
+
+
