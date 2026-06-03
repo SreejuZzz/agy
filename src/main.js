@@ -2,9 +2,17 @@ import './styles/tokens.css';
 import './styles/main.css';
 import './styles/loader-about.css';
 import { AntigravityParticles } from './antigravity-particles.js';
+import { ExperienceScanner } from './devops-bg.js';
+import gsap from 'gsap';
 
 // Reveal the document once main JS and styles have loaded
 document.documentElement.style.visibility = 'visible';
+
+// Initialize Scanner Background just for the Experience section
+const expSection = document.getElementById('experience');
+if (expSection) {
+    new ExperienceScanner(expSection);
+}
 
 // ─── Antigravity.google WebGL Particle System ───
 const particlesContainer = document.querySelector('.particles-bg');
@@ -193,178 +201,519 @@ document.addEventListener('mousemove', e => {
 }, { passive: true });
 
 
-// ─── DevOps Console: Experience Timeline ───
+// ─── DevOps Console: Experience Cloud Topology ───
 const MILESTONE_DATA = [
     {
-        command: 'cat /var/log/career/synnefo-senior.log',
-        lines: [
-            { type: 'info', text: '╔══════════════════════════════════════════════╗' },
-            { type: 'info', text: '║  Synnefo Solutions, Ernakulam                ║' },
-            { type: 'info', text: '║  Role: Senior DevOps Engineer                ║' },
-            { type: 'info', text: '║  Period: 2025 — Present                      ║' },
-            { type: 'info', text: '╚══════════════════════════════════════════════╝' },
-            { type: 'output', text: '' },
-            { type: 'success', text: '✓ Leading cloud architecture & DevOps strategy' },
-            { type: 'success', text: '✓ Managing multi-region AWS infrastructure at scale' },
-            { type: 'success', text: '✓ CI/CD orchestration: Jenkins, GitHub Actions' },
-            { type: 'success', text: '✓ Kubernetes cluster management (production)' },
-            { type: 'success', text: '✓ Terraform IaC across 20+ AWS accounts' },
-            { type: 'success', text: '✓ 99.99% uptime SLA for critical services' },
-            { type: 'output', text: '' },
-            { type: 'output', text: 'Stack: AWS | K8s | Terraform | Docker | Jenkins' },
-            { type: 'output', text: '       Prometheus | Grafana | Ansible | ArgoCD' },
-        ]
+        title: 'Network Administrator',
+        company: 'SDC Networks, Kaloor',
+        period: '2018 — 2020',
+        status: 'Learning',
+        efficiency: '88',
+        focusAreas: [
+            { name: 'Physical Networking', val: 85 },
+            { name: 'Firewalls & Sec', val: 75 },
+            { name: 'Support & Triage', val: 65 }
+        ],
+        bento1: { label: 'Environment', val: 'On-Premises' },
+        bento2: { label: 'Key Challenge', val: 'Hardware Routing' },
+        description: 'Maintained primary LAN/WAN routing tables, configured secure remote-access VPN tunnels, and maximized system availability through L2/L3 triage.',
+        yaml: `apiVersion: sreejith.devops/v1
+kind: CareerMilestone
+metadata:
+  name: network-administrator
+  company: "SDC Networks, Kaloor"
+  period: "2018-2020"
+spec:
+  role: "Network Administrator"
+  routingProtocols: ["BGP", "OSPF", "VLANs"]
+  firewallSystems: ["pfSense", "Cisco ASA"]
+  hardwareVendor: ["Cisco", "MikroTik"]
+  achievements:
+    - "Maintained primary LAN/WAN routing tables"
+    - "Configured secure remote-access VPN tunnel"
+    - "Maximized system availability, L2/L3 triage"`
     },
     {
-        command: 'cat /var/log/career/synnefo-jr-devops.log',
-        lines: [
-            { type: 'info', text: '╔══════════════════════════════════════════════╗' },
-            { type: 'info', text: '║  Synnefo Solutions, Ernakulam                ║' },
-            { type: 'info', text: '║  Role: Junior DevOps Engineer                ║' },
-            { type: 'info', text: '║  Period: 2024 — 2025                         ║' },
-            { type: 'info', text: '╚══════════════════════════════════════════════╝' },
-            { type: 'output', text: '' },
-            { type: 'success', text: '✓ Built and maintained CI/CD pipelines' },
-            { type: 'success', text: '✓ Containerised legacy applications using Docker' },
-            { type: 'success', text: '✓ Set up monitoring with Prometheus & Grafana' },
-            { type: 'success', text: '✓ Automated infrastructure provisioning with Ansible' },
-            { type: 'success', text: '✓ Supported Kubernetes workload migrations' },
-            { type: 'output', text: '' },
-            { type: 'output', text: 'Stack: Docker | Ansible | Prometheus | Grafana' },
-            { type: 'output', text: '       Jenkins | AWS | Git | Linux' },
-        ]
+        title: 'Linux Administrator',
+        company: 'Synnefo Solutions, Ernakulam',
+        period: '2020 — 2022',
+        status: 'Scaling',
+        efficiency: '92',
+        focusAreas: [
+            { name: 'Linux OS Mgmt', val: 90 },
+            { name: 'Bash Scripting', val: 80 },
+            { name: 'Issue Resolution', val: 75 }
+        ],
+        bento1: { label: 'Server Count', val: '100+ Nodes' },
+        bento2: { label: 'Key Challenge', val: 'System Hardening' },
+        description: 'Managed 100+ bare-metal & VM servers, reducing system deployment times by 70% through automation. Hardened operating systems resulting in zero breaches.',
+        yaml: `apiVersion: sreejith.devops/v1
+kind: CareerMilestone
+metadata:
+  name: linux-administrator
+  company: "Synnefo Solutions"
+  period: "2020-2022"
+spec:
+  role: "Linux Administrator"
+  distributions: ["RHEL", "CentOS", "Ubuntu"]
+  securityPolicies: ["SELinux", "iptables"]
+  automation: "Bash Scripting & Ansible"
+  achievements:
+    - "Managed 100+ bare-metal & VM servers"
+    - "Reduced system deployment times by 70%"
+    - "Hardened operating systems, zero breaches"`
     },
     {
-        command: 'cat /var/log/career/synnefo-cloud-eng.log',
-        lines: [
-            { type: 'info', text: '╔══════════════════════════════════════════════╗' },
-            { type: 'info', text: '║  Synnefo Solutions, Ernakulam                ║' },
-            { type: 'info', text: '║  Role: Cloud Engineer                        ║' },
-            { type: 'info', text: '║  Period: 2022 — 2024                         ║' },
-            { type: 'info', text: '╚══════════════════════════════════════════════╝' },
-            { type: 'output', text: '' },
-            { type: 'success', text: '✓ Designed HA architectures (multi-AZ, auto-scaling)' },
-            { type: 'success', text: '✓ Led 20+ zero-downtime cloud migrations' },
-            { type: 'success', text: '✓ Deployed and managed EC2, RDS, S3, VPC, IAM' },
-            { type: 'success', text: '✓ Reduced infra costs by 40% via right-sizing' },
-            { type: 'output', text: '' },
-            { type: 'output', text: 'Stack: AWS | GCP | Terraform | CloudFormation' },
-        ]
+        title: 'Cloud Engineer',
+        company: 'Synnefo Solutions, Ernakulam',
+        period: '2022 — 2024',
+        status: 'Transitioning',
+        efficiency: '95',
+        focusAreas: [
+            { name: 'Cloud Architecture', val: 92 },
+            { name: 'Migration Work', val: 85 },
+            { name: 'Cost Optimization', val: 78 }
+        ],
+        bento1: { label: 'Cloud Focus', val: 'AWS & GCP' },
+        bento2: { label: 'Key Challenge', val: 'Zero-Downtime' },
+        description: 'Led 20+ zero-downtime cloud migrations and cut platform infrastructure costs by 40% while designing high-availability infrastructure.',
+        yaml: `apiVersion: sreejith.devops/v1
+kind: CareerMilestone
+metadata:
+  name: cloud-engineer
+  company: "Synnefo Solutions"
+  period: "2022-2024"
+spec:
+  role: "Cloud Engineer"
+  platforms: ["AWS", "GCP"]
+  components: ["VPC", "EC2", "RDS", "Route53"]
+  redundancy: "Multi-AZ & Auto-Scaling"
+  achievements:
+    - "Led 20+ zero-downtime cloud migrations"
+    - "Cut platform infrastructure costs by 40%"
+    - "Designed high-availability infrastructure"`
     },
     {
-        command: 'cat /var/log/career/synnefo-linux-admin.log',
-        lines: [
-            { type: 'info',    text: '╔══════════════════════════════════════════════╗' },
-            { type: 'info',    text: '║  Synnefo Solutions, Ernakulam                ║' },
-            { type: 'info',    text: '║  Role: Linux Administrator                   ║' },
-            { type: 'info',    text: '║  Period: January 2020 — 2022                 ║' },
-            { type: 'info',    text: '╚══════════════════════════════════════════════╝' },
-            { type: 'output',  text: '' },
-            { type: 'success', text: '✓ Managed 100+ bare-metal & VM Linux servers' },
-            { type: 'success', text: '✓ Configured SELinux, iptables & fail2ban' },
-            { type: 'success', text: '✓ Automated provisioning with Bash & Ansible' },
-            { type: 'success', text: '✓ Built custom monitoring with Nagios + Bash' },
-            { type: 'success', text: '✓ Reduced deployment time by 70% via scripting' },
-            { type: 'output',  text: '' },
-            { type: 'output',  text: 'Stack: RHEL | CentOS | Bash | Ansible | Nagios' },
-        ]
+        title: 'Junior DevOps Engineer',
+        company: 'Synnefo Solutions, Ernakulam',
+        period: '2024 — 2025',
+        status: 'Automating',
+        efficiency: '96',
+        focusAreas: [
+            { name: 'CI/CD Pipelines', val: 88 },
+            { name: 'Docker Containers', val: 85 },
+            { name: 'Monitoring Alerts', val: 82 }
+        ],
+        bento1: { label: 'Deployments', val: 'Fully Dockerized' },
+        bento2: { label: 'Key Challenge', val: 'Pipeline Speed' },
+        description: 'Migrated legacy bare-metal systems to containerized Docker environments. Automated infrastructure monitoring alerts and optimized CI/CD pipelines.',
+        yaml: `apiVersion: sreejith.devops/v1
+kind: CareerMilestone
+metadata:
+  name: junior-devops-engineer
+  company: "Synnefo Solutions"
+  period: "2024-2025"
+spec:
+  role: "Junior DevOps Engineer"
+  containerization: "Docker"
+  continuousIntegration: "Jenkins Pipelines"
+  monitoringStack: "Prometheus & Grafana"
+  achievements:
+    - "Migrated legacy bare-metal to Docker pods"
+    - "Automated infrastructure monitoring alerts"
+    - "Optimized build pipelines, reducing latency"`
     },
     {
-        command: 'cat /var/log/career/sdc-networks.log',
-        lines: [
-            { type: 'info',    text: '╔══════════════════════════════════════════════╗' },
-            { type: 'info',    text: '║  SDC Networks, Kaloor                        ║' },
-            { type: 'info',    text: '║  Role: Network Administrator                 ║' },
-            { type: 'info',    text: '║  Period: 2018 — 2020                         ║' },
-            { type: 'info',    text: '╚══════════════════════════════════════════════╝' },
-            { type: 'output',  text: '' },
-            { type: 'success', text: '✓ Managed routers, switches, firewalls & VPNs' },
-            { type: 'success', text: '✓ Built deep troubleshooting skills for L2/L3' },
-            { type: 'success', text: '✓ Maintained LAN/WAN infrastructure & cabling' },
-            { type: 'success', text: '✓ Network monitoring & incident response' },
-            { type: 'success', text: '✓ Configured VLANs, QoS & security policies' },
-            { type: 'output',  text: '' },
-            { type: 'output',  text: 'Stack: Cisco | MikroTik | pfSense | Wireshark' },
-            { type: 'output',  text: '       VLAN | VPN | BGP | OSPF | iptables' },
-        ]
+        title: 'Senior DevOps & Cloud Architect',
+        company: 'Synnefo Solutions, Ernakulam',
+        period: '2025 — Present',
+        status: 'Architecting',
+        efficiency: '98',
+        focusAreas: [
+            { name: 'Infrastruct as Code', val: 95 },
+            { name: 'Kubernetes/EKS', val: 90 },
+            { name: 'Team Mentorship', val: 85 }
+        ],
+        bento1: { label: 'Architecture', val: 'Multi-Region' },
+        bento2: { label: 'Key Challenge', val: 'Resilience' },
+        description: 'Directing AWS architecture across 20+ accounts and orchestrating a 99.99% uptime production cluster. Mentored over 700 engineers.',
+        yaml: `apiVersion: sreejith.devops/v1
+kind: CareerMilestone
+metadata:
+  name: senior-devops-engineer
+  company: "Synnefo Solutions"
+  period: "2025-Present"
+spec:
+  role: "Senior DevOps & Cloud Architect"
+  architecture: "AWS Multi-Region / EKS"
+  infrastructureAsCode: "Terraform"
+  pipelineEngine: "GitHub Actions & ArgoCD"
+  achievements:
+    - "Directing AWS architecture across 20+ accounts"
+    - "Orchestrated 99.99% uptime production cluster"
+    - "Mentored 700+ engineers in cloud technologies"`
     }
 ];
 
-const terminalOutput = document.getElementById('terminal-output');
-const timelineNodes = document.querySelectorAll('.timeline-node');
-let currentTypingTimeout = null;
-let typingTimeouts = [];
+const topoNodes = document.querySelectorAll('.html-topo-node');
+const mobileNavBtns = document.querySelectorAll('.mobile-nav-btn');
+let yamlTypingInterval = null;
 
-function clearTyping() {
-    typingTimeouts.forEach(t => clearTimeout(t));
-    typingTimeouts = [];
+function highlightYAML(line) {
+    let escaped = line
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+    if (escaped.trim().startsWith('#')) {
+        return `<span class="yaml-comment">${escaped}</span>`;
+    }
+
+    escaped = escaped.replace(/^([ \t]*)([^#:\n]+)(:)/g, (match, indent, key, colon) => {
+        return `${indent}<span class="yaml-key">${key}</span>${colon}`;
+    });
+
+    escaped = escaped.replace(/(:\s+)([^#\n]+)/g, (match, colon, val) => {
+        const trimmedVal = val.trim();
+        if (trimmedVal.startsWith('"') && trimmedVal.endsWith('"')) {
+            return `${colon}<span class="yaml-val">${val}</span>`;
+        }
+        if (trimmedVal.startsWith('[') && trimmedVal.endsWith(']')) {
+            return `${colon}<span class="yaml-arr">${val}</span>`;
+        }
+        if (trimmedVal === 'true' || trimmedVal === 'false' || !isNaN(trimmedVal)) {
+            return `${colon}<span class="yaml-class">${val}</span>`;
+        }
+        return `${colon}<span class="yaml-val">${val}</span>`;
+    });
+
+    escaped = escaped.replace(/^([ \t]*-\s+)([^#\n]+)/g, (match, hyphen, val) => {
+        return `${hyphen}<span class="yaml-arr">${val}</span>`;
+    });
+
+    if (escaped.includes('CareerMilestone')) {
+        escaped = escaped.replace('CareerMilestone', '<span class="yaml-class">CareerMilestone</span>');
+    }
+
+    return escaped;
 }
 
-function typeTerminalLines(milestone) {
-    clearTyping();
-    if (!terminalOutput) return;
+function typeYAML(yamlText) {
+    const codeContainer = document.getElementById('yaml-manifest-code');
+    if (!codeContainer) return;
 
+    if (yamlTypingInterval) clearInterval(yamlTypingInterval);
+    codeContainer.innerHTML = '';
+    codeContainer.classList.add('yaml-typing');
+
+    const lines = yamlText.split('\n');
+    let lineIdx = 0;
+
+    yamlTypingInterval = setInterval(() => {
+        if (lineIdx < lines.length) {
+            const highlighted = highlightYAML(lines[lineIdx]);
+            const div = document.createElement('div');
+            div.innerHTML = highlighted;
+            codeContainer.appendChild(div);
+
+            const body = codeContainer.closest('.yaml-manifest-body');
+            if (body) body.scrollTop = body.scrollHeight;
+
+            lineIdx++;
+        } else {
+            clearInterval(yamlTypingInterval);
+            codeContainer.classList.remove('yaml-typing');
+        }
+    }, 25);
+}
+
+function updateFlowLines(milestone) {
+    const connectors = document.querySelectorAll('.rack-connector');
+    connectors.forEach((conn) => {
+        const connIdx = parseInt(conn.dataset.connector, 10);
+        if (connIdx < milestone) {
+            conn.classList.add('active');
+        } else {
+            conn.classList.remove('active');
+        }
+    });
+}
+
+const EXP_SCRAMBLE_CHARS = "01[]|_x+&%$#@!~?*";
+function scrambleExpText(el, text, delay = 0) {
+    if (!el) return;
+    el.textContent = "";
+    let frame = 0;
+    const maxFrames = 18; // 300ms at 60fps
+    
+    setTimeout(() => {
+        (function tick() {
+            let currentText = "";
+            for (let i = 0; i < text.length; i++) {
+                if (text[i] === " " || text[i] === "\n" || text[i] === "," || text[i] === "—") {
+                    currentText += text[i];
+                    continue;
+                }
+                const revealProgress = frame / maxFrames;
+                if (i / text.length < revealProgress) {
+                    currentText += text[i];
+                } else {
+                    currentText += EXP_SCRAMBLE_CHARS[Math.floor(Math.random() * EXP_SCRAMBLE_CHARS.length)];
+                }
+            }
+            el.textContent = currentText;
+
+            if (frame < maxFrames) {
+                frame++;
+                requestAnimationFrame(tick);
+            } else {
+                el.textContent = text;
+            }
+        })();
+    }, delay);
+}
+
+let descriptionInterval = null;
+function typewriterExpText(el, text, delay = 0, speed = 8) {
+    if (!el) return;
+    if (descriptionInterval) {
+        clearInterval(descriptionInterval);
+    }
+    el.textContent = "";
+    let i = 0;
+    setTimeout(() => {
+        descriptionInterval = setInterval(() => {
+            if (i < text.length) {
+                el.textContent += text[i];
+                i++;
+            } else {
+                clearInterval(descriptionInterval);
+            }
+        }, speed);
+    }, delay);
+}
+
+function countUpValue(el, targetVal, duration = 600) {
+    if (!el) return;
+    let start = 0;
+    const startTime = performance.now();
+    
+    function update(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const current = Math.floor(start + progress * (targetVal - start));
+        el.textContent = `${current}%`;
+        
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        } else {
+            el.textContent = `${targetVal}%`;
+        }
+    }
+    requestAnimationFrame(update);
+}
+
+function initializeExperienceMapAnimation() {
+    topoNodes.forEach((node, idx) => {
+        const sysLabel = node.querySelector('.node-label-system');
+        const roleLabel = node.querySelector('.node-label-role');
+        const subLabel = node.querySelector('.node-label-sub');
+        
+        const mData = MILESTONE_DATA[parseInt(node.dataset.milestone, 10)];
+        if (sysLabel) scrambleExpText(sysLabel, mData.company, idx * 100);
+        if (roleLabel) scrambleExpText(roleLabel, mData.title, idx * 100 + 40);
+        if (subLabel) scrambleExpText(subLabel, mData.period, idx * 100 + 80);
+    });
+}
+
+function updateTelemetry(milestone) {
     const data = MILESTONE_DATA[milestone];
     if (!data) return;
 
-    // Clear terminal
-    terminalOutput.innerHTML = '';
+    // Use GSAP timeline for staggered entry
+    const tl = gsap.timeline();
 
-    // Add command prompt
-    const cmdLine = document.createElement('div');
-    cmdLine.className = 'terminal-line';
-    cmdLine.innerHTML = `<span class="prompt">$</span> <span class="cmd">${data.command}</span>`;
-    terminalOutput.appendChild(cmdLine);
+    tl.to('.telemetry-panel', {
+        opacity: 0.6,
+        duration: 0.15,
+        ease: 'power2.inOut',
+        onComplete: () => {
+            // Title / Company / Period (with glowing digital scramble decrypt)
+            const titleEl = document.getElementById('inspector-title');
+            const companyEl = document.getElementById('inspector-company');
+            const periodEl = document.getElementById('inspector-period');
+            
+            if (titleEl) scrambleExpText(titleEl, data.title, 0);
+            if (companyEl) scrambleExpText(companyEl, data.company, 60);
+            if (periodEl) scrambleExpText(periodEl, data.period, 120);
 
-    // Type out each line with a staggered delay
-    data.lines.forEach((line, i) => {
-        const timeout = setTimeout(() => {
-            const lineEl = document.createElement('div');
-            lineEl.className = 'terminal-line';
-
-            if (line.text === '') {
-                lineEl.innerHTML = '&nbsp;';
-            } else {
-                lineEl.innerHTML = `<span class="${line.type}">${escapeHtml(line.text)}</span>`;
+            const descEl = document.getElementById('inspector-description');
+            if (descEl) {
+                typewriterExpText(descEl, data.description || '', 150, 8);
             }
 
-            terminalOutput.appendChild(lineEl);
-            terminalOutput.scrollTop = terminalOutput.scrollHeight;
-
-            // Add blinking cursor on last line
-            if (i === data.lines.length - 1) {
-                const cursorLine = document.createElement('div');
-                cursorLine.className = 'terminal-line terminal-cursor-blink';
-                cursorLine.innerHTML = '<span class="prompt">$</span> ';
-                terminalOutput.appendChild(cursorLine);
-                terminalOutput.scrollTop = terminalOutput.scrollHeight;
+            // System Status indicator
+            const statusEl = document.getElementById('inspector-status');
+            if (statusEl) {
+                statusEl.className = `system-status status-${data.status}`;
+                const indicator = statusEl.querySelector('.status-indicator');
+                const text = statusEl.querySelector('.status-text');
+                
+                if (indicator) {
+                    indicator.className = `status-indicator pulsing-${data.status === 'operational' || data.status === 'healthy' ? 'green' : 'yellow'}`;
+                }
+                if (text) {
+                    text.textContent = `Status: ${data.status}`;
+                }
             }
-        }, 60 + i * 55);
-        typingTimeouts.push(timeout);
+
+            // Gauge ring
+            const gaugeFill = document.getElementById('sla-gauge-fill');
+            const percentageText = document.getElementById('sla-percentage');
+            if (percentageText) {
+                countUpValue(percentageText, parseInt(data.efficiency, 10), 800);
+            }
+            
+            if (gaugeFill) {
+                const circumference = 213.6;
+                const offset = circumference * (1 - parseFloat(data.efficiency) / 100);
+                gaugeFill.style.strokeDashoffset = offset;
+                
+                // Color based on efficiency level
+                const colors = ['#00f0ff', '#3b82f6', '#f59e0b', '#d946ef', '#00ff88'];
+                gaugeFill.style.stroke = colors[milestone % colors.length];
+            }
+
+            // Focus Area sliders
+            data.focusAreas.forEach((area, idx) => {
+                const sliderName = document.getElementById(`comp-name-${idx}`);
+                const sliderVal = document.getElementById(`comp-val-${idx}`);
+                const sliderFill = document.getElementById(`comp-fill-${idx}`);
+                
+                if (sliderName) scrambleExpText(sliderName, area.name, 100 + idx * 40);
+                if (sliderVal) countUpValue(sliderVal, area.val, 800);
+                if (sliderFill) {
+                    sliderFill.style.width = '0%';
+                    setTimeout(() => {
+                        sliderFill.style.width = `${area.val}%`;
+                    }, 50);
+                }
+            });
+
+            // Bento stats
+            const label1 = document.getElementById('bento-label-1');
+            const val1 = document.getElementById('metric-bento-scale');
+            const label2 = document.getElementById('bento-label-2');
+            const val2 = document.getElementById('metric-bento-highlight');
+            
+            if (label1) label1.textContent = data.bento1.label;
+            if (val1) scrambleExpText(val1, data.bento1.val, 150);
+            if (label2) label2.textContent = data.bento2.label;
+            if (val2) scrambleExpText(val2, data.bento2.val, 200);
+
+            // Scramble active node labels inside left pane to simulate live connection refresh
+            const activeNode = document.querySelector(`.html-topo-node[data-milestone="${milestone}"]`);
+            if (activeNode) {
+                const sysLabel = activeNode.querySelector('.node-label-system');
+                const roleLabel = activeNode.querySelector('.node-label-role');
+                const subLabel = activeNode.querySelector('.node-label-sub');
+                
+                if (sysLabel) scrambleExpText(sysLabel, data.company, 0);
+                if (roleLabel) scrambleExpText(roleLabel, data.title, 40);
+                if (subLabel) scrambleExpText(subLabel, data.period, 80);
+            }
+
+            // Flow path highlights
+            updateFlowLines(milestone);
+
+            // Run YAML type stream
+            typeYAML(data.yaml);
+        }
+    }).to('.telemetry-panel', {
+        opacity: 1,
+        duration: 0.1,
+        ease: 'power2.inOut'
     });
+
+    // Animate stats popping in
+    tl.fromTo(['.inspector-header', '.inspector-metrics', '.yaml-manifest-window'], 
+        { y: 15, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.4, stagger: 0.08, ease: 'back.out(1.2)', clearProps: "all" },
+        "-=0.1"
+    );
 }
 
-function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+function selectMilestone(milestone) {
+    // Sync topo SVG nodes
+    topoNodes.forEach(node => {
+        const currentMilestone = parseInt(node.dataset.milestone, 10);
+        node.classList.toggle('active', currentMilestone === milestone);
+    });
+
+    // Sync mobile navigation backup pills
+    mobileNavBtns.forEach(btn => {
+        const currentMilestone = parseInt(btn.dataset.milestone, 10);
+        btn.classList.toggle('active', currentMilestone === milestone);
+        btn.setAttribute('aria-selected', currentMilestone === milestone ? 'true' : 'false');
+    });
+
+    // Load Telemetry Dashboard elements
+    updateTelemetry(milestone);
 }
 
-// Initialize timeline
-if (timelineNodes.length > 0 && terminalOutput) {
-    timelineNodes.forEach(node => {
+// Attach event listeners for SVG nodes
+if (topoNodes.length > 0) {
+    topoNodes.forEach(node => {
         node.addEventListener('click', () => {
-            // Update active state
-            timelineNodes.forEach(n => n.classList.remove('active'));
-            node.classList.add('active');
-
             const milestone = parseInt(node.dataset.milestone, 10);
-            typeTerminalLines(milestone);
+            selectMilestone(milestone);
+        });
+
+        node.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const milestone = parseInt(node.dataset.milestone, 10);
+                selectMilestone(milestone);
+            }
         });
     });
+}
 
-    // Auto-type the first milestone on load
-    typeTerminalLines(0);
+// Attach event listeners for Mobile Tab buttons
+if (mobileNavBtns.length > 0) {
+    mobileNavBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const milestone = parseInt(btn.dataset.milestone, 10);
+            selectMilestone(milestone);
+        });
+    });
+}
+
+// Attach Copy Spec listener
+const copyBtn = document.getElementById('yaml-copy-btn');
+if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+        const activeNode = document.querySelector('.html-topo-node.active');
+        const milestone = activeNode ? parseInt(activeNode.dataset.milestone, 10) : 4;
+        const rawYAML = MILESTONE_DATA[milestone].yaml;
+
+        navigator.clipboard.writeText(rawYAML).then(() => {
+            copyBtn.classList.add('copied');
+            copyBtn.querySelector('.copy-text').textContent = 'Copied!';
+            setTimeout(() => {
+                copyBtn.classList.remove('copied');
+                copyBtn.querySelector('.copy-text').textContent = 'Copy Spec';
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+        });
+    });
+}
+
+// Initialise experience dashboard (Default to Senior role - milestone 4)
+if (topoNodes.length > 0) {
+    selectMilestone(4);
+    initializeExperienceMapAnimation();
 }
 
 
