@@ -4,7 +4,6 @@
  * Faithfully replicates the n7/aI + lI classes from antigravity.google.
  *
  * Scene defaults (from the main hero component):
- *   theme            = 'dark'   (your site is dark-mode)
  *   ringWidth        = 0.15
  *   ringWidth2       = 0.05
  *   ringDisplacement = 0.15
@@ -18,13 +17,38 @@
  *   - !isIntersecting → ringPos lerps to noise drift (noise × 0.2, noise × 0.1)    at 0.01/frame
  *   - Raycasting runs every other frame (skipFrame toggle)
  *
- * Colors (used for both themes, see colorControls):
+ * Colors (see colorControls):
  *   color1 = #2c64ed  (blue)
  *   color2 = #f84242  (red)
  *   color3 = #ffcf03  (yellow)
  */
 
-import * as THREE from 'three';
+import {
+  AdditiveBlending,
+  BufferAttribute,
+  BufferGeometry,
+  ClampToEdgeWrapping,
+  Color,
+  DataTexture,
+  DoubleSide,
+  FloatType,
+  Mesh,
+  MeshBasicMaterial,
+  NearestFilter,
+  OrthographicCamera,
+  PerspectiveCamera,
+  PlaneGeometry,
+  Points,
+  RGBAFormat,
+  Raycaster,
+  Scene,
+  ShaderMaterial,
+  Timer,
+  Vector2,
+  Vector3,
+  WebGLRenderTarget,
+  WebGLRenderer,
+} from 'three';
 
 // ─── Simplex noise GLSL (Ashima Arts) ────────────────────────────────────────
 const SIMPLEX_GLSL = /* glsl */`
@@ -310,7 +334,6 @@ const mapRange = (v, inMin, inMax, outMin, outMax) =>
 export class AntigravityParticles {
   constructor(container, options = {}) {
     this.container        = container;
-    this.theme            = options.theme            ?? 'dark';
     this.density          = options.density          ?? 200;
     this.particlesScale   = options.particlesScale   ?? 0.75;  // exact hero default
     this.cameraZoom       = options.cameraZoom       ?? 3.1;
@@ -327,20 +350,16 @@ export class AntigravityParticles {
     };
 
     this.time     = 0;
-    this.lastTime = 0;
-    this.loaded   = false;
-    this.destroyed = false;
 
     // Mouse / raycasting state
-    this._mouse            = new THREE.Vector2(0, 0);
-    this._intersectionPoint = new THREE.Vector3(0, 0, 0);
+    this._intersectionPoint = new Vector3(0, 0, 0);
     this._isIntersecting   = false;
     this._mouseIsOver      = false;
     this._skipFrame        = false;  // alternates each frame (exact from source)
 
     // Ring movement state
-    this._ringPos   = new THREE.Vector2(0, 0);
-    this._cursorPos = new THREE.Vector2(0, 0);
+    this._ringPos   = new Vector2(0, 0);
+    this._cursorPos = new Vector2(0, 0);
 
     this._init();
   }
@@ -357,7 +376,7 @@ export class AntigravityParticles {
     this.container.appendChild(this.canvas);
 
     // Renderer
-    this.renderer = new THREE.WebGLRenderer({
+    this.renderer = new WebGLRenderer({
       canvas:                this.canvas,
       antialias:             true,
       alpha:                 true,
@@ -372,24 +391,24 @@ export class AntigravityParticles {
     this.renderer.autoClear = false;
 
     // Camera — exact values from source
-    this.camera = new THREE.PerspectiveCamera(40, w / h, 0.1, 1000);
+    this.camera = new PerspectiveCamera(40, w / h, 0.1, 1000);
     this.camera.position.z = this.cameraZoom;
 
-    this.scene = new THREE.Scene();
-    this.clock = new THREE.Clock();
+    this.scene = new Scene();
+    this.timer = new Timer();
+    this.timer.connect(document);   // pauses while the tab is hidden
 
     // Raycaster + invisible plane for mouse intersection (12.5×12.5 — exact from source)
-    this.raycaster  = new THREE.Raycaster();
-    this.raycastPlane = new THREE.Mesh(
-      new THREE.PlaneGeometry(12.5, 12.5),
-      new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide })
+    this.raycaster  = new Raycaster();
+    this.raycastPlane = new Mesh(
+      new PlaneGeometry(12.5, 12.5),
+      new MeshBasicMaterial({ visible: false, side: DoubleSide })
     );
     this.scene.add(this.raycastPlane);
 
     this._buildParticles();
     this._bindEvents();
 
-    this.loaded = true;
     this._loop();
   }
 
@@ -407,7 +426,6 @@ export class AntigravityParticles {
 
     // GPGPU texture
     const SIM_SIZE  = 256;
-    this._simSize   = SIM_SIZE;
     this._simLength = SIM_SIZE * SIM_SIZE;
 
     // Build position DataTexture — only first `count` slots filled
@@ -418,29 +436,29 @@ export class AntigravityParticles {
       posData[o + 1] = this._pointsData[i * 2 + 1] * (1 / 250);
       // z (scale) and w (velocity) start at 0 — invisible until ring reaches them
     }
-    this._posTex = new THREE.DataTexture(
-      posData, SIM_SIZE, SIM_SIZE, THREE.RGBAFormat, THREE.FloatType
+    this._posTex = new DataTexture(
+      posData, SIM_SIZE, SIM_SIZE, RGBAFormat, FloatType
     );
     this._posTex.needsUpdate = true;
 
     // Ping-pong render targets
     const rtOpts = {
-      wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping,
-      minFilter: THREE.NearestFilter,   magFilter: THREE.NearestFilter,
-      format: THREE.RGBAFormat, type: THREE.FloatType,
+      wrapS: ClampToEdgeWrapping, wrapT: ClampToEdgeWrapping,
+      minFilter: NearestFilter,   magFilter: NearestFilter,
+      format: RGBAFormat, type: FloatType,
       depthBuffer: false, stencilBuffer: false,
     };
-    this._rt1 = new THREE.WebGLRenderTarget(SIM_SIZE, SIM_SIZE, rtOpts);
-    this._rt2 = new THREE.WebGLRenderTarget(SIM_SIZE, SIM_SIZE, rtOpts);
+    this._rt1 = new WebGLRenderTarget(SIM_SIZE, SIM_SIZE, rtOpts);
+    this._rt2 = new WebGLRenderTarget(SIM_SIZE, SIM_SIZE, rtOpts);
 
     // Sim scene (full-screen quad)
-    this._simScene    = new THREE.Scene();
-    this._simCamera   = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    this._simMaterial = new THREE.ShaderMaterial({
+    this._simScene    = new Scene();
+    this._simCamera   = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    this._simMaterial = new ShaderMaterial({
       uniforms: {
         uPosition:         { value: this._posTex },
         uPosRefs:          { value: this._posTex },
-        uRingPos:          { value: new THREE.Vector2(0, 0) },
+        uRingPos:          { value: new Vector2(0, 0) },
         uRingRadius:       { value: 0.2 },
         uDeltaTime:        { value: 0 },
         uRingWidth:        { value: this.ringWidth },
@@ -451,7 +469,7 @@ export class AntigravityParticles {
       vertexShader:   SIM_VERT,
       fragmentShader: buildSimFrag(SIM_SIZE),
     });
-    this._simScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this._simMaterial));
+    this._simScene.add(new Mesh(new PlaneGeometry(2, 2), this._simMaterial));
 
     // Clear RTs
     this.renderer.setRenderTarget(this._rt1);
@@ -477,21 +495,21 @@ export class AntigravityParticles {
       seedsArr[i * 4 + 3] = Math.random();
     }
 
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(posArr,   3));
-    geo.setAttribute('uv',       new THREE.BufferAttribute(uvArr,    2));
-    geo.setAttribute('seeds',    new THREE.BufferAttribute(seedsArr, 4));
+    const geo = new BufferGeometry();
+    geo.setAttribute('position', new BufferAttribute(posArr,   3));
+    geo.setAttribute('uv',       new BufferAttribute(uvArr,    2));
+    geo.setAttribute('seeds',    new BufferAttribute(seedsArr, 4));
 
-    this._renderMaterial = new THREE.ShaderMaterial({
+    this._renderMaterial = new ShaderMaterial({
       uniforms: {
         uPosition:     { value: this._posTex },
         uTime:         { value: 0 },
-        uColor1:       { value: new THREE.Color(this.colorControls.color1) },
-        uColor2:       { value: new THREE.Color(this.colorControls.color2) },
-        uColor3:       { value: new THREE.Color(this.colorControls.color3) },
+        uColor1:       { value: new Color(this.colorControls.color1) },
+        uColor2:       { value: new Color(this.colorControls.color2) },
+        uColor3:       { value: new Color(this.colorControls.color3) },
         uAlpha:        { value: 1 },
-        uRingPos:      { value: new THREE.Vector2(0, 0) },
-        uRez:          { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+        uRingPos:      { value: new Vector2(0, 0) },
+        uRez:          { value: new Vector2(window.innerWidth, window.innerHeight) },
         uParticleScale:{ value: this._getParticleScale() },
         uPixelRatio:   { value: this.pixelRatio },
         uColorScheme:  { value: 1 },   // velocity-mix mode — best with vivid light palette
@@ -501,10 +519,10 @@ export class AntigravityParticles {
       transparent:   true,
       depthTest:     false,
       depthWrite:    false,
-      blending:      THREE.AdditiveBlending,  // dark=transparent, bright colors glow
+      blending:      AdditiveBlending,  // dark=transparent, bright colors glow
     });
 
-    this._mesh = new THREE.Points(geo, this._renderMaterial);
+    this._mesh = new Points(geo, this._renderMaterial);
     this._mesh.position.set(0, 0, 0);
     this._mesh.scale.set(5, 5, 5);  // exact from source
     this.scene.add(this._mesh);
@@ -524,7 +542,7 @@ export class AntigravityParticles {
 
   _bindEvents() {
     // Resize
-    this._onResize = () => {
+    window.addEventListener('resize', () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
       this.canvas.width  = w;
@@ -533,26 +551,12 @@ export class AntigravityParticles {
       this.camera.aspect = w / h;
       this.camera.updateProjectionMatrix();
       this._renderMaterial.uniforms.uRez.value.set(w, h);
-    };
-    window.addEventListener('resize', this._onResize, { passive: true });
+    }, { passive: true });
 
     // Mouse — track raw client coords
-    this._onMouseMove = (e) => {
+    window.addEventListener('mousemove', (e) => {
       this._rawMouse = { x: e.clientX, y: e.clientY };
-    };
-    window.addEventListener('mousemove', this._onMouseMove, { passive: true });
-
-    // Pause when tab hidden
-    this._onVisibility = () => {
-      if (document.hidden) {
-        this.clock.stop();
-      } else {
-        // start() resets elapsed time to 0, so reset lastTime too or dt goes negative
-        this.clock.start();
-        this.lastTime = 0;
-      }
-    };
-    document.addEventListener('visibilitychange', this._onVisibility);
+    }, { passive: true });
   }
 
   // ── Raycasting — runs every other frame (skipFrame), exact from source ──────
@@ -579,13 +583,18 @@ export class AntigravityParticles {
     }
   }
 
-  _loop() {
-    if (this.destroyed) return;
-    requestAnimationFrame(() => this._loop());
+  // Skip rendering while the hero is scrolled out of view
+  setPaused(paused) {
+    this.paused = paused;
+  }
 
-    const elapsed = this.clock.getElapsedTime();
-    const dt      = Math.min(elapsed - this.lastTime, 0.05);
-    this.lastTime = elapsed;
+  _loop() {
+    requestAnimationFrame(() => this._loop());
+    if (this.paused) return;
+
+    this.timer.update();
+    const elapsed = this.timer.getElapsed();
+    const dt      = Math.min(this.timer.getDelta(), 0.05);
     this.time    += dt;
 
     // ── Autonomous noise drift — smooth multi-frequency sinusoids ─────
@@ -656,19 +665,5 @@ export class AntigravityParticles {
     this._rt1 = this._rt2;
     this._rt2 = tmp;
     this._everRendered = true;
-  }
-
-  destroy() {
-    this.destroyed = true;
-    window.removeEventListener('resize',      this._onResize);
-    window.removeEventListener('mousemove',   this._onMouseMove);
-    document.removeEventListener('visibilitychange', this._onVisibility);
-    this._rt1.dispose(); this._rt2.dispose();
-    this._posTex.dispose();
-    this._simMaterial.dispose();
-    this._renderMaterial.dispose();
-    this._mesh.geometry.dispose();
-    this.renderer.dispose();
-    if (this.canvas.parentElement) this.canvas.parentElement.removeChild(this.canvas);
   }
 }

@@ -1,0 +1,239 @@
+/* =============================================
+   Original hero — restored verbatim from the live site.
+   Covers: hero layout, particle ring backdrop, title/subtitle, scroll cue,
+   and the theme switch's View Transition. The header lives in nav.css.
+   ============================================= */
+
+
+.hero {
+    min-height: 100vh;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 140px var(--spacing-lg) 80px;
+}
+
+@media (max-width: 768px) {
+    .hero {
+        padding: 110px var(--spacing-md) 60px;
+    }
+}
+
+/* ── WebGL Particles Background (fixed, full-viewport) ─────────────────────── */
+.particles-bg {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;          /* sits above body bg, below all content */
+    contain: strict;
+}
+
+/* The Three.js <canvas> inserted inside .particles-bg */
+.particles-bg canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Typography & Content */
+.hero .content {
+    text-align: center;
+    max-width: 1200px;
+    z-index: 10;
+}
+
+.hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 10vw, 7.5rem);
+    font-weight: 700;
+    margin-bottom: var(--spacing-sm);
+    text-align: left;
+    background: linear-gradient(
+        135deg,
+        var(--color-text-primary) 0%,
+        var(--color-accent) 50%,
+        var(--color-text-primary) 100%
+    );
+    background-size: 200% 200%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+
+    /* Dramatic entrance: blur dissolve + scale + slide */
+    opacity: 0;
+    transform: translateY(40px) scale(0.92);
+    filter: blur(12px);
+    animation:
+        hero-entrance 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+        gradient-shimmer 6s ease-in-out infinite;
+}
+
+.hero-subtitle {
+    font-size: clamp(1rem, 3.5vw, 1.5rem);
+    color: var(--color-text-secondary);
+    opacity: 0;
+    transform: translateY(25px);
+    filter: blur(8px);
+    animation: hero-entrance 1s cubic-bezier(0.16, 1, 0.3, 1) 0.35s forwards;
+    padding: 0 0.5rem 0 0;
+    text-align: left;
+}
+
+/* Dramatic hero entrance: deblur + descale + slide up */
+@keyframes hero-entrance {
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
+}
+
+/* Animated gradient shimmer on the hero title */
+@keyframes gradient-shimmer {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+/* Simple fade-in-up for other elements */
+@keyframes fade-in-up {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Scroll Indicator — enhanced with glow pulse */
+.scroll-indicator {
+    margin-top: var(--spacing-xl);
+    opacity: 0;
+    animation:
+        hero-entrance 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.8s forwards;
+}
+
+.scroll-indicator span {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--color-text-secondary);
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.scroll-indicator .arrow {
+    font-size: 1.2rem;
+    animation: bounce-glow 2.5s ease-in-out infinite;
+    color: var(--color-accent);
+}
+
+@keyframes bounce-glow {
+    0%, 100% {
+        transform: translateY(0);
+        opacity: 0.5;
+        text-shadow: 0 0 0 transparent;
+    }
+    50% {
+        transform: translateY(12px);
+        opacity: 1;
+        text-shadow: 0 0 16px var(--color-accent-glow);
+    }
+}
+
+/* ── Hero title: pure black in light mode ── */
+body.light-mode .hero-title {
+    background: none;
+    -webkit-background-clip: unset;
+    background-clip: unset;
+    -webkit-text-fill-color: #000000;
+    color: #000000;
+    /* Remove the shimmer animation — static pure black */
+    animation: hero-entrance 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ─── Root theme transition variables safety fallback ─── */
+:root {
+    --theme-toggle-x: 0px;
+    --theme-toggle-y: 0px;
+    --theme-toggle-r: 0px;
+    --theme-transition-duration: 1300ms;
+}
+
+/* Shorter theme transition on mobile to prevent memory and freeze lag */
+@media (max-width: 768px) {
+    :root {
+        --theme-transition-duration: 600ms;
+    }
+}
+
+/* ─── Instant Capture Transition Bypass ─── */
+.switching-theme,
+.switching-theme *,
+.switching-theme *::before,
+.switching-theme *::after {
+    transition: none !important;
+}
+
+/* ─── View Transitions API Theme Switch ─── */
+/* Completely disable browser-default cross-fades and blending to prevent flickering/flashing leaks */
+::view-transition-group(root) {
+    animation: none !important;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none !important;
+    mix-blend-mode: normal !important;
+    opacity: 1 !important;
+    height: 100% !important;
+    width: 100% !important;
+    object-fit: cover !important;
+}
+
+/* Ensure the old state remains 100% solid on the bottom */
+::view-transition-old(root) {
+    z-index: 1 !important;
+}
+
+/* Clean circular reveal wipe of the new state on top */
+::view-transition-new(root) {
+    z-index: 9999 !important;
+    animation: var(--theme-transition-duration) cubic-bezier(0.16, 1, 0.3, 1) both theme-reveal !important;
+}
+
+@keyframes theme-reveal {
+    from {
+        clip-path: circle(0px at var(--theme-toggle-x) var(--theme-toggle-y));
+    }
+    to {
+        clip-path: circle(var(--theme-toggle-r) at var(--theme-toggle-x) var(--theme-toggle-y));
+    }
+}
+
+/* Force clean isolation to prevent mixing snapshotted alpha layers */
+::view-transition-image-pair(root) {
+    isolation: auto !important;
+}
+
+/* Match the root container background to avoid flashing */
+html::view-transition {
+    background-color: var(--color-bg) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-title,
+    .hero-subtitle {
+        opacity: 1;
+        transform: none;
+        filter: none;
+    }
+
+    .scroll-indicator {
+        opacity: 0.7;
+    }
+}

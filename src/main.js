@@ -1,28 +1,73 @@
-import './styles/tokens.css';
 import './styles/main.css';
-import './styles/loader-about.css';
 import { AntigravityParticles } from './antigravity-particles.js';
-import { ExperienceScanner } from './devops-bg.js';
+import { GalaxyWorld, RS_KPC } from './galaxy-world.js';
+import { initTransitions } from './transitions.js';
 import gsap from 'gsap';
+import { SplitText } from 'gsap/SplitText';
+import { MOTION, spring } from './motion.js';
 
 // Reveal the document once main JS and styles have loaded
 document.documentElement.style.visibility = 'visible';
 
-// Initialize Scanner Background just for the Experience section
-const expSection = document.getElementById('experience');
-if (expSection) {
-    new ExperienceScanner(expSection);
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const isMobile = window.innerWidth <= 768;
+
+// ─── Headings: each word slides up from behind a mask, one after another ───
+function splitWords(el) {
+    if (el.dataset.split) return [...el.querySelectorAll('.reveal-word')];
+    el.dataset.split = 'true';
+    const words = el.textContent.trim().split(/\s+/);
+    el.textContent = '';
+    el.setAttribute('aria-label', words.join(' '));
+    return words.map((word, i) => {
+        const mask = document.createElement('span');
+        mask.className = 'reveal-mask';
+        mask.setAttribute('aria-hidden', 'true');
+        const span = document.createElement('span');
+        span.className = 'reveal-word';
+        span.textContent = word;
+        mask.appendChild(span);
+        el.appendChild(mask);
+        if (i < words.length - 1) el.appendChild(document.createTextNode(' '));
+        return span;
+    });
 }
 
-// ─── Antigravity.google WebGL Particle System ───
+function revealHeading(el) {
+    const words = splitWords(el);
+    if (reducedMotion) return;
+    gsap.fromTo(words,
+        { yPercent: 110 },
+        { yPercent: 0, duration: MOTION.enter, ease: MOTION.ease, stagger: 0.04, overwrite: true });
+}
+
+// ─── Body text: each line slides up from behind its own mask, like the headings ───
+gsap.registerPlugin(SplitText);
+// (not the last page's subtitle: the black hole shreds that one into characters instead)
+const LINE_TEXT = '.section-subtitle:not(#portal-contact *), .card--plain .card-text';
+const lineSplits = new Map();
+if (!reducedMotion) {
+    document.querySelectorAll(LINE_TEXT).forEach(el => {
+        // autoSplit re-splits when fonts load or the width changes
+        lineSplits.set(el, SplitText.create(el, { type: 'lines', mask: 'lines', autoSplit: true }));
+    });
+}
+
+function revealLines(el) {
+    const split = lineSplits.get(el);
+    if (!split) return;
+    gsap.fromTo(split.lines,
+        { yPercent: 105 },
+        { yPercent: 0, duration: MOTION.enter, ease: MOTION.ease, stagger: MOTION.stagger, overwrite: true });
+}
+
+// ─── Hero: original particle ring ───
 const particlesContainer = document.querySelector('.particles-bg');
-let particlesReady = false;
+let particles = null;
 if (particlesContainer) {
-    const isMobile = window.innerWidth <= 768;
     // WebGL may be unavailable (old GPU, disabled in browser) — don't let that break the rest of the page
     try {
-        new AntigravityParticles(particlesContainer, {
-            theme:            'dark',  // always use the vivid dark palette
+        particles = new AntigravityParticles(particlesContainer, {
             density:          isMobile ? 65 : 246,    // Optimized for mobile WebGL performance
             particlesScale:   isMobile ? 1.5 : 0.75,   // scaled up for crisp visibility on mobile
             cameraZoom:       isMobile ? 3.5 : 3.1,    // zoom out slightly on mobile so the ring fits perfectly on the screen
@@ -31,112 +76,164 @@ if (particlesContainer) {
             ringDisplacement: isMobile ? 0.20 : 0.15,
             interactive:      true,   // ring follows mouse cursor / touch
         });
-        particlesReady = true;
     } catch {
         particlesContainer.remove();
     }
 }
 
-if (particlesReady) {
-    // ── Smooth scroll-based fade: particles visible only on hero ─────────────
-    // Maps the hero's exit progress linearly to canvas opacity for pixel-perfect
-    // smoothness — no threshold jumps, no CSS transition delays.
-    const heroSection = document.getElementById('home');
-    if (heroSection) {
-        // Fade starts when hero bottom is 80 % of viewport height from top,
-        // and completes when hero bottom reaches 20 % of viewport height.
-        const FADE_START = 0.80; // fraction of vh — hero bottom crossing this triggers fade
-        const FADE_END   = 0.20; // fraction of vh — fully transparent here
-
-        let rafId = null;
-
-        const updateParticleOpacity = () => {
-            rafId = null;
-            const rect   = heroSection.getBoundingClientRect();
-            const vh     = window.innerHeight;
-
-            // heroBottom as a 0→1 fraction of viewport height (1 = at bottom edge, 0 = at top)
-            const heroBottom = rect.bottom / vh;
-
-            let opacity;
-            if (heroBottom >= FADE_START) {
-                opacity = 1;  // hero fully (or mostly) visible — full opacity
-            } else if (heroBottom <= FADE_END) {
-                opacity = 0;  // hero has scrolled well past — fully hidden
-            } else {
-                // Linear interpolation between FADE_START and FADE_END
-                opacity = (heroBottom - FADE_END) / (FADE_START - FADE_END);
-            }
-
-            particlesContainer.style.opacity = opacity;
-        };
-
-        const onScroll = () => {
-            if (!rafId) rafId = requestAnimationFrame(updateParticleOpacity);
-        };
-
-        window.addEventListener('scroll', onScroll, { passive: true });
-        // Run once on load so initial state is correct
-        updateParticleOpacity();
+// ─── The Milky Way (everything after the hero) ───
+const worldCanvas = document.getElementById('world-canvas');
+let world = null;
+if (worldCanvas) {
+    try {
+        world = new GalaxyWorld(worldCanvas, { mobile: isMobile });
+    } catch {
+        world = null; // the plain dark backdrop still shows
     }
 }
 
-
-// ─── Nav: scroll-state pill glow ───
-const mainHeader = document.querySelector('.main-header');
-if (mainHeader) {
-    const onNavScroll = () => mainHeader.classList.toggle('scrolled', window.scrollY > 60);
-    window.addEventListener('scroll', onNavScroll, { passive: true });
-    onNavScroll();
-}
-
-// ─── Nav: active-section link highlight ───
+// ─── Header: active chapter, gliding underline, scroll progress ───
+const header = document.getElementById('main-header');
 const navAnchors = document.querySelectorAll('.nav-links a[href^="#"]');
-const pageSections = [...navAnchors]
-    .map(a => document.querySelector(a.getAttribute('href')))
-    .filter(Boolean);
+const indicator = document.querySelector('.nav-indicator');
+const sectionIds = ['home', ...[...document.querySelectorAll('.world-section')].map(s => s.id)];
+let activeIndex = -1;
 
-if (pageSections.length) {
-    const sectionObserver = new IntersectionObserver(
-        entries => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    navAnchors.forEach(a =>
-                        a.classList.toggle('active', a.getAttribute('href') === `#${entry.target.id}`)
-                    );
-                }
-            });
-        },
-        { threshold: 0.5 }
-    );
-    pageSections.forEach(s => sectionObserver.observe(s));
+// The underline moves to the active chapter on the shared spring (and hides on the hero)
+function placeIndicator(immediate = false) {
+    if (!indicator) return;
+    const link = [...navAnchors].find(a => a.classList.contains('active'));
+    const target = link ? { x: link.offsetLeft, width: link.offsetWidth, opacity: 1 } : { opacity: 0 };
+    gsap.to(indicator, { ...target, duration: immediate ? 0 : MOTION.update, ease: MOTION.ease, overwrite: true });
+}
+window.addEventListener('resize', () => placeIndicator(true), { passive: true });
+
+function onStation(u) {
+    const index = Math.min(Math.round(u), sectionIds.length - 1);
+    if (index !== activeIndex) {
+        activeIndex = index;
+        navAnchors.forEach(a => a.classList.toggle('active', a.getAttribute('href') === `#${sectionIds[index]}`));
+        placeIndicator();
+    }
+    const progress = (maxScroll > 0 ? Math.min(Math.max(window.scrollY / maxScroll, 0), 1) : 0).toFixed(3);
+    if (header && progress !== lastProgress) {
+        lastProgress = progress;
+        header.style.setProperty('--progress', progress);
+    }
 }
 
+// Scroll length is measured only when the page changes size, never during scrolling
+let lastProgress = '';
+let maxScroll = 0;
+const measureScroll = () => { maxScroll = document.documentElement.scrollHeight - window.innerHeight; };
+measureScroll();
+new ResizeObserver(measureScroll).observe(document.body);
 
+// ─── Chapters: in each open stretch, the place the camera has arrived at ───
+const CHAPTERS = [
+    { name: 'Orion Spur', data: 'The Sun · 8.18 kpc from the Galactic centre · 20.8 pc above the plane' },
+    { name: 'Above the disk', data: '7.0 kpc north of the Galactic plane · the Sun’s side of the disk below' },
+    { name: 'Scutum–Centaurus Arm', data: 'One of the Galaxy’s two major arms · ≈ 6 kpc from the centre' },
+    { name: 'The Galactic bar', data: 'Inclined 27° to the Sun–centre line · half-length ≈ 5 kpc' },
+    { name: 'The bulge', data: 'Mostly stars older than 8 billion years · seen from 7.5 kpc' },
+    { name: 'Sagittarius A*', data: '4.3 million solar masses · 26,700 light-years from the Sun' },
+];
+const worldEl = document.getElementById('world');
+let lastDim = '';
+const chapter = document.getElementById('chapter');
+const chapterIndex = document.getElementById('chapter-index');
+const chapterName = document.getElementById('chapter-name');
+const chapterData = document.getElementById('chapter-data');
+let chapterShown = -1;
+let lastShown = '';
 
-// ─── Mobile Navigation Toggle ───
-const hamburger = document.getElementById('hamburger');
+function onOpenStretch(k, index, finale) {
+    // Dim the scene behind a page while it is read; full brightness between pages and in the finale
+    // Set on #world itself (its ::after uses it), so only that element restyles
+    const dim = (1 - Math.max(k, finale)).toFixed(3);
+    if (worldEl && dim !== lastDim) {
+        lastDim = dim;
+        worldEl.style.setProperty('--world-dim', dim);
+    }
+    if (!chapter) return;
+    if (index >= 0 && index !== chapterShown && CHAPTERS[index]) {
+        chapterShown = index;
+        chapterIndex.textContent = `${String(index + 1).padStart(2, '0')} / ${String(CHAPTERS.length).padStart(2, '0')}`;
+        chapterName.textContent = CHAPTERS[index].name;
+        chapterData.textContent = CHAPTERS[index].data;
+    }
+    const shown = (index >= 0 ? k : 0).toFixed(3);
+    if (shown === lastShown) return;
+    lastShown = shown;
+    chapter.style.opacity = shown;
+    chapter.style.transform = `translate3d(0, ${((1 - shown) * 12).toFixed(1)}px, 0)`;
+}
+
+// ─── Menu (phones): a full-screen sheet of chapters ───
+const menuButton = document.getElementById('hamburger');
 const navLinks = document.getElementById('nav-links');
 
-if (hamburger && navLinks) {
-    hamburger.addEventListener('click', () => {
-        const isActive = navLinks.classList.toggle('active');
-        hamburger.classList.toggle('active');
-        hamburger.setAttribute('aria-expanded', isActive);
-        document.body.style.overflow = isActive ? 'hidden' : '';
-    });
-
-    navLinks.querySelectorAll('a').forEach(link => {
-        link.addEventListener('click', () => {
-            navLinks.classList.remove('active');
-            hamburger.classList.remove('active');
-            hamburger.setAttribute('aria-expanded', 'false');
-            document.body.style.overflow = '';
-        });
+if (menuButton && navLinks) {
+    const setMenu = open => {
+        navLinks.classList.toggle('active', open);
+        header.classList.toggle('menu-open', open);
+        menuButton.setAttribute('aria-expanded', String(open));
+        menuButton.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+        document.body.style.overflow = open ? 'hidden' : '';
+    };
+    menuButton.addEventListener('click', () => setMenu(!navLinks.classList.contains('active')));
+    [...navLinks.querySelectorAll('a'), header.querySelector('.brand')].forEach(link => link.addEventListener('click', () => setMenu(false)));
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && navLinks.classList.contains('active')) setMenu(false);
     });
 }
 
-// ─── Theme Toggle with Circular Clip-Path Transition ───
+// ─── Readout: the camera's real distance to Sgr A*, in the unit that suits it, and the time ───
+const readout = document.getElementById('readout-value');
+const readoutExtra = document.getElementById('readout-extra');
+const AU_PER_KPC = 2.0626e8;
+function formatDistance(kpc) {
+    if (kpc >= 1) return `${kpc.toFixed(2)} kpc`;
+    if (kpc >= 0.001) return `${(kpc * 1000).toFixed(kpc >= 0.01 ? 0 : 1)} pc`;
+    if (kpc >= 50 * RS_KPC) {
+        const au = kpc * AU_PER_KPC;
+        return `${au >= 100 ? Math.round(au).toLocaleString('en') : au.toFixed(1)} AU`;
+    }
+    return `${(kpc / RS_KPC).toFixed(1)} rs`;
+}
+// Time since "now" (at the Sun), or near Sgr A* how fast a clock held still there runs
+function formatExtra(myr, clock) {
+    if (clock !== null) return `clock ×${clock < 0.995 ? clock.toFixed(2) : clock.toFixed(4)}`;
+    if (Math.abs(myr) < 0.5) return 'now';
+    return `t ${myr > 0 ? '+' : '−'}${Math.abs(myr).toFixed(0)} million years`;
+}
+if (world && readout) {
+    let shown = '', shownExtra = '';
+    world.onReadout = ({ kpc, myr, clock }) => {
+        const text = formatDistance(kpc), extra = formatExtra(myr, clock);
+        if (text !== shown) readout.textContent = shown = text;
+        if (readoutExtra && extra !== shownExtra) readoutExtra.textContent = shownExtra = extra;
+    };
+}
+
+// ─── Instrument panels: a soft light follows the cursor ───
+if (window.matchMedia('(hover: hover)').matches) {
+    let lit = null;
+    document.addEventListener('pointermove', e => {
+        const panel = e.target.closest?.('.card:not(.card--plain)');
+        if (lit && lit !== panel) {
+            lit.style.removeProperty('--mx');
+            lit.style.removeProperty('--my');
+        }
+        lit = panel;
+        if (!panel) return;
+        const box = panel.getBoundingClientRect();
+        panel.style.setProperty('--mx', `${e.clientX - box.left}px`);
+        panel.style.setProperty('--my', `${e.clientY - box.top}px`);
+    }, { passive: true });
+}
+
+// ─── Theme Toggle with Circular Clip-Path Transition (hero) ───
 const themeBtn = document.getElementById('theme-toggle');
 if (themeBtn) {
     themeBtn.addEventListener('click', (event) => {
@@ -144,13 +241,11 @@ if (themeBtn) {
         const nextTheme = isDark ? 'light' : 'dark';
 
         // Detect support for View Transitions and prefers-reduced-motion preference
-        const useTransition = document.startViewTransition && 
-            !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const useTransition = document.startViewTransition && !reducedMotion;
 
         if (!useTransition) {
-            // Non-supporting browsers utilize ultra-smooth GPU-accelerated CSS color transitions
             document.body.classList.toggle('light-mode');
-            localStorage.setItem('theme', nextTheme);
+            try { localStorage.setItem('theme', nextTheme); } catch { /* storage unavailable */ }
             return;
         }
 
@@ -165,7 +260,6 @@ if (themeBtn) {
             Math.max(y, window.innerHeight - y)
         );
 
-        // Feed coordinates into CSS Custom Properties
         document.documentElement.style.setProperty('--theme-toggle-x', `${x}px`);
         document.documentElement.style.setProperty('--theme-toggle-y', `${y}px`);
         document.documentElement.style.setProperty('--theme-toggle-r', `${endRadius}px`);
@@ -175,32 +269,14 @@ if (themeBtn) {
 
         const transition = document.startViewTransition(() => {
             document.body.classList.toggle('light-mode');
-            localStorage.setItem('theme', nextTheme);
+            try { localStorage.setItem('theme', nextTheme); } catch { /* storage unavailable */ }
         });
 
-        // Clean up once transition is finished
         transition.finished.finally(() => {
             document.documentElement.classList.remove('switching-theme');
         });
     });
 }
-
-
-// ─── Card Mouse Tracking for Glow Effect ───
-document.addEventListener('mousemove', e => {
-    const card = e.target.closest('.card, .project-card, .skill-group');
-    if (!card) return;
-
-    if (!card._rectCache || e.timeStamp - (card._rectTime || 0) > 500) {
-        card._rectCache = card.getBoundingClientRect();
-        card._rectTime = e.timeStamp;
-    }
-
-    const rect = card._rectCache;
-    card.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
-    card.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
-}, { passive: true });
-
 
 // ─── DevOps Console: Experience Cloud Topology ───
 const MILESTONE_DATA = [
@@ -417,7 +493,7 @@ function typeYAML(yamlText) {
             div.innerHTML = highlighted;
             codeContainer.appendChild(div);
 
-            const body = codeContainer.closest('.yaml-manifest-body');
+            const body = codeContainer.closest('.code-body');
             if (body) body.scrollTop = body.scrollHeight;
 
             lineIdx++;
@@ -428,199 +504,72 @@ function typeYAML(yamlText) {
     }, 25);
 }
 
-const EXP_SCRAMBLE_CHARS = "01[]|_x+&%$#@!~?*";
-function scrambleExpText(el, text, delay = 0) {
-    if (!el) return;
-    el.textContent = "";
-    let frame = 0;
-    const maxFrames = 18; // 300ms at 60fps
-    
-    setTimeout(() => {
-        (function tick() {
-            let currentText = "";
-            for (let i = 0; i < text.length; i++) {
-                if (text[i] === " " || text[i] === "\n" || text[i] === "," || text[i] === "—") {
-                    currentText += text[i];
-                    continue;
-                }
-                const revealProgress = frame / maxFrames;
-                if (i / text.length < revealProgress) {
-                    currentText += text[i];
-                } else {
-                    currentText += EXP_SCRAMBLE_CHARS[Math.floor(Math.random() * EXP_SCRAMBLE_CHARS.length)];
-                }
-            }
-            el.textContent = currentText;
-
-            if (frame < maxFrames) {
-                frame++;
-                requestAnimationFrame(tick);
-            } else {
-                el.textContent = text;
-            }
-        })();
-    }, delay);
+// Count a number up from zero on the shared spring curve
+function countUp(el, target, ms, format = n => n) {
+    const t0 = performance.now();
+    (function tick(now) {
+        const p = Math.min((now - t0) / ms, 1);
+        el.textContent = format(Math.round(spring(p) * target));
+        if (p < 1) requestAnimationFrame(tick);
+    })(t0);
 }
 
-let descriptionInterval = null;
-let descriptionTimeout = null;
-function typewriterExpText(el, text, delay = 0, speed = 8) {
-    if (!el) return;
-    clearTimeout(descriptionTimeout);
-    clearInterval(descriptionInterval);
-    el.textContent = "";
-    let i = 0;
-    descriptionTimeout = setTimeout(() => {
-        descriptionInterval = setInterval(() => {
-            if (i < text.length) {
-                el.textContent += text[i];
-                i++;
-            } else {
-                clearInterval(descriptionInterval);
-            }
-        }, speed);
-    }, delay);
-}
-
-function countUpValue(el, targetVal, duration = 600) {
-    if (!el) return;
-    let start = 0;
-    const startTime = performance.now();
-    
-    function update(now) {
-        const elapsed = now - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const current = Math.floor(start + progress * (targetVal - start));
-        el.textContent = `${current}%`;
-        
-        if (progress < 1) {
-            requestAnimationFrame(update);
-        } else {
-            el.textContent = `${targetVal}%`;
-        }
-    }
-    requestAnimationFrame(update);
-}
-
-function initializeExperienceMapAnimation() {
-    topoNodes.forEach((node, idx) => {
-        const sysLabel = node.querySelector('.node-label-system');
-        const roleLabel = node.querySelector('.node-label-role');
-        const subLabel = node.querySelector('.node-label-sub');
-        
-        const mData = MILESTONE_DATA[parseInt(node.dataset.milestone, 10)];
-        if (sysLabel) scrambleExpText(sysLabel, mData.company, idx * 100);
-        if (roleLabel) scrambleExpText(roleLabel, mData.title, idx * 100 + 40);
-        if (subLabel) scrambleExpText(subLabel, mData.period, idx * 100 + 80);
-    });
+function setText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
 }
 
 function updateTelemetry(milestone) {
     const data = MILESTONE_DATA[milestone];
     if (!data) return;
 
-    // Use GSAP timeline for staggered entry
-    const tl = gsap.timeline();
+    const applyData = () => {
+        setText('inspector-title', data.title);
+        setText('inspector-company', data.company);
+        setText('inspector-period', data.period);
+        setText('inspector-description', data.description);
+        setText('inspector-status', data.status);
 
-    tl.to('.telemetry-panel', {
-        opacity: 0.6,
-        duration: 0.15,
-        ease: 'power2.inOut',
-        onComplete: () => {
-            // Title / Company / Period (with glowing digital scramble decrypt)
-            const titleEl = document.getElementById('inspector-title');
-            const companyEl = document.getElementById('inspector-company');
-            const periodEl = document.getElementById('inspector-period');
-            
-            if (titleEl) scrambleExpText(titleEl, data.title, 0);
-            if (companyEl) scrambleExpText(companyEl, data.company, 60);
-            if (periodEl) scrambleExpText(periodEl, data.period, 120);
-
-            const descEl = document.getElementById('inspector-description');
-            if (descEl) {
-                typewriterExpText(descEl, data.description || '', 150, 8);
-            }
-
-            // System Status indicator
-            const statusEl = document.getElementById('inspector-status');
-            if (statusEl) {
-                const text = statusEl.querySelector('.status-text');
-                if (text) {
-                    text.textContent = `Status: ${data.status}`;
-                }
-            }
-
-            // Gauge ring
-            const gaugeFill = document.getElementById('sla-gauge-fill');
-            const percentageText = document.getElementById('sla-percentage');
-            if (percentageText) {
-                countUpValue(percentageText, parseInt(data.efficiency, 10), 800);
-            }
-            
-            if (gaugeFill) {
-                const circumference = 213.6;
-                const offset = circumference * (1 - parseFloat(data.efficiency) / 100);
-                gaugeFill.style.strokeDashoffset = offset;
-                
-                // Color based on efficiency level
-                const colors = ['#00f0ff', '#3b82f6', '#f59e0b', '#d946ef', '#00ff88'];
-                gaugeFill.style.stroke = colors[milestone % colors.length];
-            }
-
-            // Focus Area sliders
-            data.focusAreas.forEach((area, idx) => {
-                const sliderName = document.getElementById(`comp-name-${idx}`);
-                const sliderVal = document.getElementById(`comp-val-${idx}`);
-                const sliderFill = document.getElementById(`comp-fill-${idx}`);
-                
-                if (sliderName) scrambleExpText(sliderName, area.name, 100 + idx * 40);
-                if (sliderVal) countUpValue(sliderVal, area.val, 800);
-                if (sliderFill) {
-                    sliderFill.style.width = '0%';
-                    setTimeout(() => {
-                        sliderFill.style.width = `${area.val}%`;
-                    }, 50);
-                }
-            });
-
-            // Bento stats
-            const label1 = document.getElementById('bento-label-1');
-            const val1 = document.getElementById('metric-bento-scale');
-            const label2 = document.getElementById('bento-label-2');
-            const val2 = document.getElementById('metric-bento-highlight');
-            
-            if (label1) label1.textContent = data.bento1.label;
-            if (val1) scrambleExpText(val1, data.bento1.val, 150);
-            if (label2) label2.textContent = data.bento2.label;
-            if (val2) scrambleExpText(val2, data.bento2.val, 200);
-
-            // Scramble active node labels inside left pane to simulate live connection refresh
-            const activeNode = document.querySelector(`.html-topo-node[data-milestone="${milestone}"]`);
-            if (activeNode) {
-                const sysLabel = activeNode.querySelector('.node-label-system');
-                const roleLabel = activeNode.querySelector('.node-label-role');
-                const subLabel = activeNode.querySelector('.node-label-sub');
-                
-                if (sysLabel) scrambleExpText(sysLabel, data.company, 0);
-                if (roleLabel) scrambleExpText(roleLabel, data.title, 40);
-                if (subLabel) scrambleExpText(subLabel, data.period, 80);
-            }
-
-            // Run YAML type stream
-            typeYAML(data.yaml);
+        // Gauge ring
+        const gaugeFill = document.getElementById('sla-gauge-fill');
+        const percentageText = document.getElementById('sla-percentage');
+        if (percentageText) countUp(percentageText, parseInt(data.efficiency, 10), MOTION.enter * 1000, n => `${n}%`);
+        if (gaugeFill) {
+            const circumference = 213.6;
+            const offset = circumference * (1 - parseFloat(data.efficiency) / 100);
+            gaugeFill.style.strokeDashoffset = offset;
         }
-    }).to('.telemetry-panel', {
-        opacity: 1,
-        duration: 0.1,
-        ease: 'power2.inOut'
-    });
 
-    // Animate stats popping in
-    tl.fromTo(['.inspector-header', '.inspector-metrics', '.yaml-manifest-window'], 
-        { y: 15, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.4, stagger: 0.08, ease: 'back.out(1.2)', clearProps: "all" },
-        "-=0.1"
-    );
+        // Focus Area sliders
+        data.focusAreas.forEach((area, idx) => {
+            const sliderName = document.getElementById(`comp-name-${idx}`);
+            const sliderVal = document.getElementById(`comp-val-${idx}`);
+            const sliderFill = document.getElementById(`comp-fill-${idx}`);
+            if (sliderName) sliderName.textContent = area.name;
+            if (sliderVal) countUp(sliderVal, area.val, MOTION.enter * 1000, n => `${n}%`);
+            if (sliderFill) {
+                sliderFill.style.width = '0%';
+                setTimeout(() => {
+                    sliderFill.style.width = `${area.val}%`;
+                }, 50);
+            }
+        });
+
+        // Bento stats
+        setText('bento-label-1', data.bento1.label);
+        setText('metric-bento-scale', data.bento1.val);
+        setText('bento-label-2', data.bento2.label);
+        setText('metric-bento-highlight', data.bento2.val);
+
+        // Run YAML type stream
+        typeYAML(data.yaml);
+    };
+
+    // Content cross-fades in place: out softly, swap, back in with the shared rise
+    const blocks = ['.inspector-header', '.inspector-metrics', '.telemetry-panel .code-window'];
+    gsap.timeline()
+        .to(blocks, { opacity: 0, y: -8, duration: MOTION.exit / 2, ease: MOTION.ease, stagger: 0.03, overwrite: true, onComplete: applyData })
+        .to(blocks, { opacity: 1, y: 0, duration: MOTION.update, ease: MOTION.ease, stagger: MOTION.stagger });
 }
 
 function selectMilestone(milestone) {
@@ -641,25 +590,10 @@ function selectMilestone(milestone) {
     updateTelemetry(milestone);
 }
 
-// Attach event listeners for SVG nodes
-if (topoNodes.length > 0) {
-    topoNodes.forEach(node => {
-        node.addEventListener('click', () => {
-            const milestone = parseInt(node.dataset.milestone, 10);
-            selectMilestone(milestone);
-        });
-    });
-}
-
-// Attach event listeners for Mobile Tab buttons
-if (mobileNavBtns.length > 0) {
-    mobileNavBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const milestone = parseInt(btn.dataset.milestone, 10);
-            selectMilestone(milestone);
-        });
-    });
-}
+// Topology nodes and their mobile tab equivalents select a milestone
+[...topoNodes, ...mobileNavBtns].forEach(el => {
+    el.addEventListener('click', () => selectMilestone(parseInt(el.dataset.milestone, 10)));
+});
 
 // Attach Copy Spec listener
 const copyBtn = document.getElementById('yaml-copy-btn');
@@ -670,11 +604,11 @@ if (copyBtn) {
         const rawYAML = MILESTONE_DATA[milestone].yaml;
 
         navigator.clipboard.writeText(rawYAML).then(() => {
-            copyBtn.classList.add('copied');
-            copyBtn.querySelector('.copy-text').textContent = 'Copied!';
+            copyBtn.classList.add('active');
+            copyBtn.querySelector('.copy-text').textContent = 'Copied';
             setTimeout(() => {
-                copyBtn.classList.remove('copied');
-                copyBtn.querySelector('.copy-text').textContent = 'Copy Spec';
+                copyBtn.classList.remove('active');
+                copyBtn.querySelector('.copy-text').textContent = 'Copy';
             }, 2000);
         }).catch(err => {
             console.error('Failed to copy: ', err);
@@ -685,9 +619,7 @@ if (copyBtn) {
 // Initialise experience dashboard (Default to Senior role - milestone 4)
 if (topoNodes.length > 0) {
     selectMilestone(4);
-    initializeExperienceMapAnimation();
 }
-
 
 // ─── Contact Form ───
 const contactForm = document.getElementById('contact-form');
@@ -748,7 +680,7 @@ function typeContactTerminal(lines) {
                 if (submitBtn) {
                     setTimeout(() => {
                         submitBtn.classList.remove('loading', 'success');
-                        submitBtn.querySelector('.btn-text').textContent = 'Deploy Message';
+                        submitBtn.querySelector('.btn-text').textContent = 'Send message';
                     }, 3000);
                 }
             }
@@ -792,22 +724,22 @@ if (contactForm && submitBtn) {
             { type: 'cmd', text: 'kubectl apply -f message-payload.yaml' },
             { type: 'output', text: `Packaging payload from ${name} <${email}>...` },
             { type: 'output', text: 'Validating SMTP route configuration...' },
-            { type: 'success', text: '✓ Route validated: smtp-gateway.sreejith.cloud' },
+            { type: 'success', text: '[ ok ] route validated: smtp-gateway.sreejith.cloud' },
             { type: 'output', text: 'Provisioning message container...' },
-            { type: 'success', text: '✓ Container deployed: msg-relay-pod-7x3k2' },
+            { type: 'success', text: '[ ok ] container deployed: msg-relay-pod-7x3k2' },
             { type: 'output', text: 'Encrypting payload with TLS 1.3...' },
-            { type: 'success', text: '✓ Payload encrypted and sealed' },
+            { type: 'success', text: '[ ok ] payload encrypted and sealed' },
             { type: 'output', text: 'Deploying to message queue...' },
-            { type: 'success', text: '✓ Message successfully deployed!' },
+            { type: 'success', text: '[ ok ] message deployed' },
             { type: 'output', text: '' },
-            { type: 'info', text: '📬 Thank you! I\'ll respond within 24 hours.' },
+            { type: 'info', text: 'Thank you. I\'ll reply within 24 hours.' },
         ]);
 
         // Show success on button
         setTimeout(() => {
             submitBtn.classList.remove('loading');
             submitBtn.classList.add('success');
-            submitBtn.querySelector('.btn-text').textContent = '✓ Deployed';
+            submitBtn.querySelector('.btn-text').textContent = 'Sent';
             contactForm.reset();
         }, 1400);
     });
@@ -818,32 +750,26 @@ if (contactForm && submitBtn) {
 const SKILLS_DATA = [
     {
         category: 'Cloud & Infrastructure',
-        icon: '☁️',
         skills: ['AWS EC2', 'AWS S3', 'AWS VPC', 'AWS RDS', 'AWS IAM', 'AWS CloudWatch', 'Route 53', 'EKS', 'AWS SAA']
     },
     {
         category: 'DevOps & CI/CD',
-        icon: '🔁',
         skills: ['Kubernetes', 'Docker', 'Jenkins', 'GitHub Actions', 'ArgoCD', 'Terraform', 'Ansible', 'Helm']
     },
     {
         category: 'Monitoring & Security',
-        icon: '📊',
         skills: ['Prometheus', 'Grafana', 'Nagios', 'ELK Stack', 'fail2ban', 'SELinux', 'iptables', 'pfSense']
     },
     {
         category: 'OS & Networking',
-        icon: '🖧',
         skills: ['RHEL', 'CentOS', 'Ubuntu', 'Cisco', 'MikroTik', 'VLAN', 'VPN', 'BGP', 'OSPF', 'Wireshark']
     },
     {
         category: 'Scripting & Automation',
-        icon: '⚙️',
         skills: ['Bash', 'Shell Script', 'Python', 'YAML', 'JSON', 'Makefile', 'Cron', 'Systemd']
     },
     {
         category: 'Certifications',
-        icon: '🏅',
         skills: ['RHCSA (#250-136-470)', 'AWS SAA (Apr 2026)']
     }
 ];
@@ -854,15 +780,12 @@ function renderSkills() {
 
     SKILLS_DATA.forEach(group => {
         const groupEl = document.createElement('div');
-        groupEl.className = 'skill-group';
+        groupEl.className = 'card skill-group';
 
         groupEl.innerHTML = `
-            <div class="skill-group-header">
-                <span class="skill-group-icon" aria-hidden="true">${group.icon}</span>
-                <h3 class="skill-group-title">${group.category}</h3>
-            </div>
-            <div class="skill-tags">
-                ${group.skills.map(s => `<span class="skill-tag">${s}</span>`).join('')}
+            <p class="card-label">${group.category}</p>
+            <div class="tag-list">
+                ${group.skills.map(s => `<span class="tag">${s}</span>`).join('')}
             </div>
         `;
         grid.appendChild(groupEl);
@@ -871,356 +794,31 @@ function renderSkills() {
 
 renderSkills();
 
-// ════════════════════════════════════════════════════════════════════
-// IGLOO-INSPIRED ABOUT  ·  www.igloo.inc
-// Ice particle constellation canvas, digital text scramble decrypt,
-// and coordinated viewport transitions.
-// ════════════════════════════════════════════════════════════════════
-(function initIglooAbout() {
-    const section  = document.querySelector('.beagle-about');
-    if (!section) return;
-
-    const rule     = document.getElementById('ba-rule');
-    const baCanvas = document.getElementById('ba-canvas');
-    const statNums = document.querySelectorAll('.ba-stat-num');
-
-    const heroBlock  = document.getElementById('ba-hero');
-    const cardsBlock = document.getElementById('ba-cards');
-    const statsBlock = document.getElementById('ba-stats');
-    const approachBlock = document.getElementById('ba-approach');
-
-    // ── Digital Text Scramble Decrypt Engine ───────────────────────────
-    const SCRAMBLE_CHARS = "01[]|_x+&%$#@!~?*";
-
-    function scrambleText(el, delay = 0) {
-        if (el.dataset.scrambling === "true") return;
-        el.dataset.scrambling = "true";
-
-        const originalText = el.textContent;
-        const originalHTML = el.innerHTML;
-        const length = originalText.length;
-        let frame = 0;
-        const maxFrames = 25; // ~400ms at 60fps
-
-        setTimeout(() => {
-            (function tick() {
-                let currentText = "";
-                for (let i = 0; i < length; i++) {
-                    if (originalText[i] === " " || originalText[i] === "\n") {
-                        currentText += originalText[i];
-                        continue;
-                    }
-                    const revealProgress = frame / maxFrames;
-                    if (i / length < revealProgress) {
-                        currentText += originalText[i];
-                    } else {
-                        currentText += SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
-                    }
-                }
-                el.textContent = currentText;
-
-                if (frame < maxFrames) {
-                    frame++;
-                    requestAnimationFrame(tick);
-                } else {
-                    el.innerHTML = originalHTML;
-                    el.dataset.scrambling = "false";
-                }
-            })();
-        }, delay);
-    }
-
-    // ── Stat Counters ──────────────────────────────────────────────────
-    let counted = false;
-    const easeOutQuart = t => 1 - Math.pow(1 - t, 4);
-
-    function countUp(el, target, ms, delay) {
-        setTimeout(() => {
-            const t0 = performance.now();
-            (function tick(now) {
-                const p = Math.min((now - t0) / ms, 1);
-                el.textContent = Math.round(easeOutQuart(p) * target);
-                if (p < 1) requestAnimationFrame(tick);
-                else el.textContent = target;
-            })(performance.now());
-        }, delay);
-    }
-
-    // ── Coordinated Scroll Entrance Observers ───────────────────────────
-    const entryObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const target = entry.target;
-
-                if (target === heroBlock && !target.classList.contains('visible')) {
-                    target.classList.add('visible');
-                    
-                    // Trigger text scrambles
-                    const eyebrow = target.querySelector('.ba-eyebrow');
-                    if (eyebrow) scrambleText(eyebrow, 0);
-
-                    const lines = target.querySelectorAll('.ba-hl-line');
-                    lines.forEach((line, i) => scrambleText(line, 150 + i * 120));
-
-                    const subParts = target.querySelectorAll('.ba-sub-part');
-                    subParts.forEach((part, i) => scrambleText(part, 350 + i * 150));
-
-                    // Charge neon rule
-                    setTimeout(() => rule && rule.classList.add('charged'), 600);
-                }
-
-                if (target === cardsBlock && !target.classList.contains('visible')) {
-                    target.classList.add('visible');
-
-                    const labels = target.querySelectorAll('.ba-card-label');
-                    labels.forEach((label, i) => scrambleText(label, i * 200));
-                }
-
-                if (target === statsBlock && !target.classList.contains('visible')) {
-                    target.classList.add('visible');
-
-                    const labels = target.querySelectorAll('.ba-stat-lbl');
-                    labels.forEach((label, i) => scrambleText(label, i * 150));
-
-                    if (!counted) {
-                        counted = true;
-                        statNums.forEach((el, i) => {
-                            countUp(el, parseInt(el.dataset.target, 10), 1600, i * 120);
-                        });
-                    }
-                }
-
-                if (target === approachBlock && !target.classList.contains('visible')) {
-                    target.classList.add('visible');
-
-                    const labels = target.querySelectorAll('.ba-card-label');
-                    labels.forEach((label, i) => scrambleText(label, i * 150));
-
-                    const title = target.querySelector('.ba-approach-title');
-                    if (title) scrambleText(title, 200);
-                }
-            }
+// ─── About: count up the stats once they scroll into view ───
+const stats = document.getElementById('about-stats');
+if (stats) {
+    const observer = new IntersectionObserver(([entry]) => {
+        if (!entry.isIntersecting) return;
+        observer.disconnect();
+        stats.querySelectorAll('.stat-num').forEach((el, i) => {
+            setTimeout(() => countUp(el, parseInt(el.dataset.target, 10), 1600), i * 120);
         });
-    }, { threshold: 0.15 });
+    }, { threshold: 0.3 });
+    observer.observe(stats);
+}
 
-    if (heroBlock) entryObserver.observe(heroBlock);
-    if (cardsBlock) entryObserver.observe(cardsBlock);
-    if (statsBlock) entryObserver.observe(statsBlock);
-    if (approachBlock) entryObserver.observe(approachBlock);
+// ─── Scroll choreography: hero → world, page transitions, camera stations ───
+initTransitions({
+    world,
+    particles,
+    reducedMotion,
+    onStation,
+    onReveal: el => {
+        el.querySelectorAll('[data-reveal]').forEach(revealHeading);
+        (el.matches(LINE_TEXT) ? [el] : [...el.querySelectorAll(LINE_TEXT)]).forEach(revealLines);
+    },
+    onOpenStretch,
+});
 
-    // ── Hover Scramble Triggers ─────────────────────────────────────────
-    document.querySelectorAll('.ba-card').forEach(card => {
-        card.addEventListener('mouseenter', () => {
-            const lbl = card.querySelector('.ba-card-label');
-            if (lbl) scrambleText(lbl, 0);
-        });
-    });
-
-    document.querySelectorAll('.ba-stat').forEach(stat => {
-        stat.addEventListener('mouseenter', () => {
-            const lbl = stat.querySelector('.ba-stat-lbl');
-            if (lbl) scrambleText(lbl, 0);
-        });
-    });
-
-    document.querySelectorAll('.ba-sub-part').forEach(part => {
-        part.addEventListener('mouseenter', () => {
-            scrambleText(part, 0);
-        });
-    });
-
-    // ── Interactive Ice Particle Constellation Canvas ───────────────────
-    if (!baCanvas) return;
-    const ctx = baCanvas.getContext('2d');
-    let W, H, particles, rafId;
-    
-    const isLightMode = () => document.body.classList.contains('light-mode');
-    
-    // Mouse tracker relative to canvas
-    let mouse = { x: null, y: null, active: false };
-
-    section.addEventListener('mousemove', (e) => {
-        const rect = baCanvas.getBoundingClientRect();
-        mouse.x = e.clientX - rect.left;
-        mouse.y = e.clientY - rect.top;
-        mouse.active = true;
-    }, { passive: true });
-
-    section.addEventListener('mouseleave', () => {
-        mouse.active = false;
-    }, { passive: true });
-
-    function resize() {
-        W = baCanvas.width  = section.offsetWidth;
-        H = baCanvas.height = section.offsetHeight;
-    }
-
-    function createParticles() {
-        // Dynamic density adjustment based on screen width
-        const count = W < 640 ? 45 : 125;
-        return Array.from({ length: count }, () => {
-            const baseVx = (Math.random() - 0.5) * 0.25;
-            const baseVy = (Math.random() - 0.5) * 0.25;
-            return {
-                x: Math.random() * W,
-                y: Math.random() * H,
-                r: Math.random() * 1.8 + 0.6,
-                vx: baseVx,
-                vy: baseVy,
-                baseVx: baseVx,
-                baseVy: baseVy,
-                charge: 0 // Velocity-responsive glow
-            };
-        });
-    }
-
-    function renderLoop() {
-        ctx.clearRect(0, 0, W, H);
-        const light = isLightMode();
-
-        // Color profiles matching Igloo palettes
-        const particleBaseColor = light ? [88, 96, 110] : [56, 62, 78];     // Muted steel / slate grey
-        const particleActiveColor = light ? [0, 150, 199] : [0, 242, 254];   // Glowing ice-cyan
-        const linkColor = light ? "rgba(0, 150, 199, " : "rgba(0, 242, 254, ";
-
-        // 1. Physics update & drawing particles
-        particles.forEach(p => {
-            p.x += p.vx;
-            p.y += p.vy;
-
-            // Restoring velocity parameters
-            p.vx += (p.baseVx - p.vx) * 0.04;
-            p.vy += (p.baseVy - p.vy) * 0.04;
-
-            // Proximity parameters to cursor
-            if (mouse.active) {
-                const dx = mouse.x - p.x;
-                const dy = mouse.y - p.y;
-                const dist = Math.sqrt(dx*dx + dy*dy);
-
-                if (dist < 180) {
-                    // Magnetic attraction/repulsion fluid loop
-                    const force = (180 - dist) / 180;
-                    const angle = Math.atan2(dy, dx);
-
-                    // Pull particles closer to create dense nodes near the cursor
-                    p.vx += Math.cos(angle) * force * 0.24;
-                    p.vy += Math.sin(angle) * force * 0.24;
-                    p.charge = Math.min(1, p.charge + 0.07);
-                } else {
-                    p.charge = Math.max(0, p.charge - 0.02);
-                }
-            } else {
-                p.charge = Math.max(0, p.charge - 0.02);
-            }
-
-            // Boundary wrap-around
-            if (p.x < -10) p.x = W + 10;
-            if (p.x > W + 10) p.x = -10;
-            if (p.y < -10) p.y = H + 10;
-            if (p.y > H + 10) p.y = -10;
-
-            // Compute velocity-responsive color blending
-            const r_c = Math.round(particleBaseColor[0] + (particleActiveColor[0] - particleBaseColor[0]) * p.charge);
-            const g_c = Math.round(particleBaseColor[1] + (particleActiveColor[1] - particleBaseColor[1]) * p.charge);
-            const b_c = Math.round(particleBaseColor[2] + (particleActiveColor[2] - particleBaseColor[2]) * p.charge);
-
-            ctx.fillStyle = `rgb(${r_c}, ${g_c}, ${b_c})`;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-            ctx.fill();
-        });
-
-        // 2. Proximity web linkages
-        for (let i = 0; i < particles.length; i++) {
-            const p1 = particles[i];
-
-            for (let j = i + 1; j < particles.length; j++) {
-                const p2 = particles[j];
-                const dx = p1.x - p2.x;
-                const dy = p1.y - p2.y;
-                const dist = Math.sqrt(dx*dx + dy*dy);
-
-                if (dist < 95) {
-                    const alpha = ((95 - dist) / 95 * 0.13).toFixed(3);
-                    ctx.strokeStyle = `${linkColor}${alpha})`;
-                    ctx.lineWidth = 0.75;
-                    ctx.beginPath();
-                    ctx.moveTo(p1.x, p1.y);
-                    ctx.lineTo(p2.x, p2.y);
-                    ctx.stroke();
-                }
-            }
-
-            // Interactive linkages directly to cursor
-            if (mouse.active) {
-                const dxM = p1.x - mouse.x;
-                const dyM = p1.y - mouse.y;
-                const distM = Math.sqrt(dxM*dxM + dyM*dyM);
-
-                if (distM < 150) {
-                    const alphaM = ((150 - distM) / 150 * 0.16).toFixed(3);
-                    ctx.strokeStyle = `${linkColor}${alphaM})`;
-                    ctx.lineWidth = 0.9;
-                    ctx.beginPath();
-                    ctx.moveTo(p1.x, p1.y);
-                    ctx.lineTo(mouse.x, mouse.y);
-                    ctx.stroke();
-                }
-            }
-        }
-
-        rafId = requestAnimationFrame(renderLoop);
-    }
-
-    // Only run canvas animations while section is actively visible in viewport
-    let canvasObserverActive = false;
-    new IntersectionObserver(([e]) => {
-        if (e.isIntersecting && !canvasObserverActive) {
-            canvasObserverActive = true;
-            resize();
-            particles = createParticles();
-            baCanvas.classList.add('visible');
-            rafId = requestAnimationFrame(renderLoop);
-        } else if (!e.isIntersecting && canvasObserverActive) {
-            cancelAnimationFrame(rafId);
-            rafId = null;
-            canvasObserverActive = false;
-        }
-    }, { threshold: 0.05 }).observe(section);
-
-    window.addEventListener('resize', () => { 
-        if (canvasObserverActive) {
-            resize(); 
-            particles = createParticles(); 
-        }
-    }, { passive: true });
-
-})();
-
-
-// ─── High-Performance Scroll Reveal Intersection Observer (for Mobile & Desktop) ───
-(function initScrollReveal() {
-    const elements = document.querySelectorAll(
-        '.snap-section h2, .snap-section .section-subtitle, .snap-section .work-subtitle, .card, .project-card, .experience, .social-link, .contact-form, .contact-terminal, .skills-grid'
-    );
-
-    if (!elements.length) return;
-
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('revealed');
-                // Once revealed, unobserve to conserve mobile CPU cycles
-                observer.unobserve(entry.target);
-            }
-        });
-    }, {
-        threshold: 0.08,               // Trigger when 8% is visible
-        rootMargin: '0px 0px -40px 0px' // Reveal slightly before crossing screen line
-    });
-
-    elements.forEach(el => observer.observe(el));
-})();
-
-
+// Split headings up front so the first reveal doesn't reflow
+document.querySelectorAll('[data-reveal]').forEach(splitWords);

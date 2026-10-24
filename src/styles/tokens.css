@@ -1,15 +1,3 @@
-@property --color-surface {
-    syntax: '<color>';
-    inherits: true;
-    initial-value: rgba(255, 255, 255, 0.05);
-}
-
-@property --color-surface-hover {
-    syntax: '<color>';
-    inherits: true;
-    initial-value: rgba(255, 255, 255, 0.1);
-}
-
 @property --color-text-primary {
     syntax: '<color>';
     inherits: true;
@@ -35,17 +23,12 @@
 }
 
 :root {
-    /* Colors */
+    /* Hero colours */
     --color-bg: #000000;
-    --color-surface: rgba(255, 255, 255, 0.05);
-    --color-surface-hover: rgba(255, 255, 255, 0.1);
     --color-text-primary: #ffffff;
     --color-text-secondary: #a0a0a0;
     --color-accent: #0044ff;
-    /* Vibrant Navy Blue */
     --color-accent-glow: rgba(0, 68, 255, 0.5);
-
-
 
     /* Typography */
     --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
@@ -53,72 +36,71 @@
     --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
     /* Spacing */
-    --spacing-xs: 0.5rem;
     --spacing-sm: 1rem;
     --spacing-md: 2rem;
     --spacing-lg: 4rem;
     --spacing-xl: 8rem;
 
-    /* Animation */
-    --transition-fast: 200ms ease;
-    --transition-medium: 400ms ease;
+    /* Galaxy pages — always dark, whatever the hero theme (space is dark; text stays readable) */
+    --w-fog: #05070c;
+    --w-ink: #f2f5fa;
+    --w-text: #e3e8f0;
+    --w-muted: #aab4c6;
+    --w-line: rgba(170, 195, 235, 0.2);
+    --w-line-strong: rgba(170, 195, 235, 0.45);
+    --w-hair: rgba(170, 195, 235, 0.14);
+    --w-panel: rgba(9, 12, 20, 0.86);
+    /* Colours are temperatures: blackbody colours, as in the galaxy and the black hole's disk */
+    --w-accent: #cadaff;                     /* 10,000 K — anything interactive */
+    --w-accent-hover: #e4ecff;
+    --w-accent-text: #cadaff;
+    --w-accent-soft: rgba(202, 218, 255, 0.12);
+    --w-accent-ink: #05070c;                 /* text on the accent */
+    --w-warm: #ffcea6;                       /* 4,000 K — highlights */
+    --w-error: #ff9a8a;
 
+    /* Type scale: ratio ≈ 1.2 (display titles are fluid) */
+    --text-xs: 0.6875rem;    /* 11px — mono labels */
+    --text-sm: 0.8125rem;    /* 13px */
+    --text-base: 0.9375rem;  /* 15px */
+    --text-md: 1.0625rem;    /* 17px — body */
+    --text-lg: 1.25rem;      /* 20px */
+    --text-xl: 1.5rem;       /* 24px */
+    --radius: 4px;           /* panels: instruments, not pills */
 
-
-    /* Terminal / Console Theme */
-    --terminal-bg: rgba(8, 12, 20, 0.85);
-    --terminal-border: rgba(0, 255, 136, 0.12);
-    --terminal-green: #00ff88;
-    --terminal-green-dim: rgba(0, 255, 136, 0.5);
-    --terminal-green-glow: rgba(0, 255, 136, 0.15);
-    --terminal-text: #c8d6e5;
-    --terminal-prompt: #00ff88;
-    --terminal-cursor: #00ff88;
-    --terminal-header-bg: rgba(0, 255, 136, 0.06);
-    --terminal-dot-red: #ff5f57;
-    --terminal-dot-yellow: #febc2e;
-    --terminal-dot-green: #28c840;
-
-    /* Contact Section */
-    --color-success: #00ff88;
-    --color-error: #ff4757;
-    --input-bg: rgba(255, 255, 255, 0.04);
-    --input-border: rgba(255, 255, 255, 0.08);
-    --input-border-focus: var(--color-accent);
+    /* Motion — mirrors src/motion.js */
+    --ease-out: cubic-bezier(0.25, 0.25, 0.15, 1);
+    --motion-quick: 0.5s;
+    --motion-enter: 1.4s;
 }
 
 body.light-mode {
     --color-bg: #ffffff;
-    --color-surface: rgba(255, 255, 255, 0.4);
-    --color-surface-hover: rgba(255, 255, 255, 0.6);
     --color-text-primary: #1d1d1f;
     --color-text-secondary: #4a4a4a;
     --color-accent: #0022aa;
     --color-accent-glow: rgba(0, 34, 170, 0.3);
-    /* Terminal overrides for light mode */
-    --terminal-bg: rgba(240, 244, 248, 0.92);
-    --terminal-border: rgba(0, 120, 80, 0.15);
-    --terminal-green: #007850;
-    --terminal-green-dim: rgba(0, 120, 80, 0.5);
-    --terminal-green-glow: rgba(0, 120, 80, 0.08);
-    --terminal-text: #334155;
-    --terminal-prompt: #007850;
-    --terminal-cursor: #007850;
-    --terminal-header-bg: rgba(0, 120, 80, 0.06);
-
-    /* Contact overrides */
-    --input-bg: rgba(0, 0, 0, 0.03);
-    --input-border: rgba(0, 0, 0, 0.1);
 }
 
-/* Mobile Responsive Variable Scaling */
+/* Very wide screens at 100% scaling (1440p and up, ultrawide, 4K): scale everything up with
+   the root size (layout is in rem), so the site isn't a small island in a huge display */
+@media (min-width: 2200px) {
+    html {
+        font-size: 125%;
+    }
+}
+
+@media (min-width: 3000px) {
+    html {
+        font-size: 150%;
+    }
+}
+
 @media (max-width: 768px) {
     :root {
         --spacing-md: 1.2rem;
         --spacing-lg: 2rem;
         --spacing-xl: 4rem;
-
-
     }
 }
 
@@ -136,12 +118,11 @@ body {
     color: var(--color-text-primary);
     font-family: var(--font-primary);
     line-height: 1.5;
-    overflow-x: hidden;
+    overflow-x: hidden;   /* older browsers without overflow: clip */
+    overflow-x: clip;
     transition:
         background-color 0.4s linear,
         color 0.4s linear,
-        --color-surface 0.4s linear,
-        --color-surface-hover 0.4s linear,
         --color-text-primary 0.4s linear,
         --color-text-secondary 0.4s linear,
         --color-accent 0.4s linear,
@@ -151,4 +132,7 @@ body {
 html {
     scroll-behavior: smooth;
     height: 100%;
+    /* Nothing may make the page wider than the screen (the black hole stretches fragments
+       across it): on phones that would zoom the page out and cut the scroll short */
+    overflow-x: clip;
 }
