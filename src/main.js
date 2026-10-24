@@ -16,23 +16,28 @@ if (expSection) {
 
 // ─── Antigravity.google WebGL Particle System ───
 const particlesContainer = document.querySelector('.particles-bg');
+let particlesReady = false;
 if (particlesContainer) {
     const isMobile = window.innerWidth <= 768;
-    const particles = new AntigravityParticles(particlesContainer, {
-        theme:            'dark',  // always use the vivid dark palette
-        density:          isMobile ? 65 : 246,    // Optimized for mobile WebGL performance
-        particlesScale:   isMobile ? 1.5 : 0.75,   // scaled up for crisp visibility on mobile
-        cameraZoom:       isMobile ? 3.5 : 3.1,    // zoom out slightly on mobile so the ring fits perfectly on the screen
-        ringWidth:        isMobile ? 0.20 : 0.15,  // wider ring on mobile to stand out
-        ringWidth2:       isMobile ? 0.08 : 0.05,
-        ringDisplacement: isMobile ? 0.20 : 0.15,
-        interactive:      true,   // ring follows mouse cursor / touch
-    });
+    // WebGL may be unavailable (old GPU, disabled in browser) — don't let that break the rest of the page
+    try {
+        new AntigravityParticles(particlesContainer, {
+            theme:            'dark',  // always use the vivid dark palette
+            density:          isMobile ? 65 : 246,    // Optimized for mobile WebGL performance
+            particlesScale:   isMobile ? 1.5 : 0.75,   // scaled up for crisp visibility on mobile
+            cameraZoom:       isMobile ? 3.5 : 3.1,    // zoom out slightly on mobile so the ring fits perfectly on the screen
+            ringWidth:        isMobile ? 0.20 : 0.15,  // wider ring on mobile to stand out
+            ringWidth2:       isMobile ? 0.08 : 0.05,
+            ringDisplacement: isMobile ? 0.20 : 0.15,
+            interactive:      true,   // ring follows mouse cursor / touch
+        });
+        particlesReady = true;
+    } catch {
+        particlesContainer.remove();
+    }
+}
 
-
-    // Same vivid blue-violet gradient in both light AND dark mode
-    // No theme sync needed for colors — palette is identical in both modes
-
+if (particlesReady) {
     // ── Smooth scroll-based fade: particles visible only on hero ─────────────
     // Maps the hero's exit progress linearly to canvas opacity for pixel-perfect
     // smoothness — no threshold jumps, no CSS transition delays.
@@ -178,16 +183,12 @@ if (themeBtn) {
             document.documentElement.classList.remove('switching-theme');
         });
     });
-
-    if (localStorage.getItem('theme') === 'light') {
-        document.body.classList.add('light-mode');
-    }
 }
 
 
 // ─── Card Mouse Tracking for Glow Effect ───
 document.addEventListener('mousemove', e => {
-    const card = e.target.closest('.card, .project-card, .bento-card, .traverse-card, .skill-group');
+    const card = e.target.closest('.card, .project-card, .skill-group');
     if (!card) return;
 
     if (!card._rectCache || e.timeStamp - (card._rectTime || 0) > 500) {
@@ -427,18 +428,6 @@ function typeYAML(yamlText) {
     }, 25);
 }
 
-function updateFlowLines(milestone) {
-    const connectors = document.querySelectorAll('.rack-connector');
-    connectors.forEach((conn) => {
-        const connIdx = parseInt(conn.dataset.connector, 10);
-        if (connIdx < milestone) {
-            conn.classList.add('active');
-        } else {
-            conn.classList.remove('active');
-        }
-    });
-}
-
 const EXP_SCRAMBLE_CHARS = "01[]|_x+&%$#@!~?*";
 function scrambleExpText(el, text, delay = 0) {
     if (!el) return;
@@ -474,14 +463,14 @@ function scrambleExpText(el, text, delay = 0) {
 }
 
 let descriptionInterval = null;
+let descriptionTimeout = null;
 function typewriterExpText(el, text, delay = 0, speed = 8) {
     if (!el) return;
-    if (descriptionInterval) {
-        clearInterval(descriptionInterval);
-    }
+    clearTimeout(descriptionTimeout);
+    clearInterval(descriptionInterval);
     el.textContent = "";
     let i = 0;
-    setTimeout(() => {
+    descriptionTimeout = setTimeout(() => {
         descriptionInterval = setInterval(() => {
             if (i < text.length) {
                 el.textContent += text[i];
@@ -555,13 +544,7 @@ function updateTelemetry(milestone) {
             // System Status indicator
             const statusEl = document.getElementById('inspector-status');
             if (statusEl) {
-                statusEl.className = `system-status status-${data.status}`;
-                const indicator = statusEl.querySelector('.status-indicator');
                 const text = statusEl.querySelector('.status-text');
-                
-                if (indicator) {
-                    indicator.className = `status-indicator pulsing-${data.status === 'operational' || data.status === 'healthy' ? 'green' : 'yellow'}`;
-                }
                 if (text) {
                     text.textContent = `Status: ${data.status}`;
                 }
@@ -623,9 +606,6 @@ function updateTelemetry(milestone) {
                 if (subLabel) scrambleExpText(subLabel, data.period, 80);
             }
 
-            // Flow path highlights
-            updateFlowLines(milestone);
-
             // Run YAML type stream
             typeYAML(data.yaml);
         }
@@ -667,14 +647,6 @@ if (topoNodes.length > 0) {
         node.addEventListener('click', () => {
             const milestone = parseInt(node.dataset.milestone, 10);
             selectMilestone(milestone);
-        });
-
-        node.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                const milestone = parseInt(node.dataset.milestone, 10);
-                selectMilestone(milestone);
-            }
         });
     });
 }
@@ -738,12 +710,21 @@ function validateField(input, errorEl) {
     return true;
 }
 
+function escapeHtml(str) {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 function typeContactTerminal(lines) {
     if (!contactTerminal) return;
     contactTerminal.innerHTML = '';
 
     lines.forEach((line, i) => {
-        const timeout = setTimeout(() => {
+        setTimeout(() => {
             const lineEl = document.createElement('div');
             lineEl.className = 'terminal-line';
 
@@ -902,7 +883,6 @@ renderSkills();
     const rule     = document.getElementById('ba-rule');
     const baCanvas = document.getElementById('ba-canvas');
     const statNums = document.querySelectorAll('.ba-stat-num');
-    const statsRow = document.querySelector('.ba-stats');
 
     const heroBlock  = document.getElementById('ba-hero');
     const cardsBlock = document.getElementById('ba-cards');
@@ -917,6 +897,7 @@ renderSkills();
         el.dataset.scrambling = "true";
 
         const originalText = el.textContent;
+        const originalHTML = el.innerHTML;
         const length = originalText.length;
         let frame = 0;
         const maxFrames = 25; // ~400ms at 60fps
@@ -942,7 +923,7 @@ renderSkills();
                     frame++;
                     requestAnimationFrame(tick);
                 } else {
-                    el.textContent = originalText;
+                    el.innerHTML = originalHTML;
                     el.dataset.scrambling = "false";
                 }
             })();
@@ -1004,7 +985,6 @@ renderSkills();
                     if (!counted) {
                         counted = true;
                         statNums.forEach((el, i) => {
-                            scrambleText(el, i * 100);
                             countUp(el, parseInt(el.dataset.target, 10), 1600, i * 120);
                         });
                     }
@@ -1222,7 +1202,7 @@ renderSkills();
 // ─── High-Performance Scroll Reveal Intersection Observer (for Mobile & Desktop) ───
 (function initScrollReveal() {
     const elements = document.querySelectorAll(
-        '.snap-section h2, .snap-section .section-subtitle, .snap-section .work-subtitle, .card, .project-card, .bento-card, .timeline-node, .experience, .social-link, .contact-form, .contact-terminal, .skills-grid, .traverse-card'
+        '.snap-section h2, .snap-section .section-subtitle, .snap-section .work-subtitle, .card, .project-card, .experience, .social-link, .contact-form, .contact-terminal, .skills-grid'
     );
 
     if (!elements.length) return;

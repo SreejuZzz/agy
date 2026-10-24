@@ -18,10 +18,10 @@
  *   - !isIntersecting → ringPos lerps to noise drift (noise × 0.2, noise × 0.1)    at 0.01/frame
  *   - Raycasting runs every other frame (skipFrame toggle)
  *
- * Colors (dark mode from source):
- *   color1 = #7189ff  (blue-violet)
- *   color2 = #3074f9  (blue)
- *   color3 = #000000  (black)
+ * Colors (used for both themes, see colorControls):
+ *   color1 = #2c64ed  (blue)
+ *   color2 = #f84242  (red)
+ *   color3 = #ffcf03  (yellow)
  */
 
 import * as THREE from 'three';
@@ -362,11 +362,11 @@ export class AntigravityParticles {
       antialias:             true,
       alpha:                 true,
       powerPreference:       'high-performance',
-      preserveDrawingBuffer: true,
       stencil:               false,
       precision:             'highp',
     });
-    this.pixelRatio = window.devicePixelRatio;
+    // Cap DPR — 3x phones would otherwise render 9x the pixels for no visible gain
+    this.pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
     this.renderer.setPixelRatio(this.pixelRatio);
     this.renderer.setSize(w, h);
     this.renderer.autoClear = false;
@@ -544,8 +544,13 @@ export class AntigravityParticles {
 
     // Pause when tab hidden
     this._onVisibility = () => {
-      if (document.hidden) this.clock.stop();
-      else this.clock.start();
+      if (document.hidden) {
+        this.clock.stop();
+      } else {
+        // start() resets elapsed time to 0, so reset lastTime too or dt goes negative
+        this.clock.start();
+        this.lastTime = 0;
+      }
     };
     document.addEventListener('visibilitychange', this._onVisibility);
   }

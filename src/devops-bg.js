@@ -76,12 +76,6 @@ export class ExperienceScanner {
             this.container.style.position = 'relative';
         }
         
-        const contentContainer = this.container.querySelector('.container');
-        if (contentContainer) {
-            contentContainer.style.position = 'relative';
-            contentContainer.style.zIndex = '1';
-        }
-        
         this.canvas = document.createElement('canvas');
         this.canvas.className = 'exp-net-bg';
         this.canvas.style.position = 'absolute';
@@ -107,7 +101,17 @@ export class ExperienceScanner {
         this.initPaths();
         
         this.animate = this.animate.bind(this);
-        requestAnimationFrame(this.animate);
+        this.rafId = null;
+
+        // Only animate while the section is on screen
+        new IntersectionObserver(([entry]) => {
+            if (entry.isIntersecting && !this.rafId) {
+                this.rafId = requestAnimationFrame(this.animate);
+            } else if (!entry.isIntersecting && this.rafId) {
+                cancelAnimationFrame(this.rafId);
+                this.rafId = null;
+            }
+        }).observe(this.container);
     }
     
     resize() {
@@ -250,10 +254,11 @@ export class ExperienceScanner {
         
         // Clean nulls & respawn
         this.paths = this.paths.filter(p => p !== null);
-        while (this.paths.length < 6) {
+        // spawnPath() is a no-op on an empty grid, so bail out instead of looping forever
+        while (this.paths.length < 6 && this.cols && this.rows) {
             this.spawnPath();
         }
         
-        requestAnimationFrame(this.animate);
+        this.rafId = requestAnimationFrame(this.animate);
     }
 }

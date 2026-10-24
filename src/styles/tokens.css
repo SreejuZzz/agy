@@ -50,6 +50,7 @@
     /* Typography */
     --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
     --font-display: 'Outfit', sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
     /* Spacing */
     --spacing-xs: 0.5rem;

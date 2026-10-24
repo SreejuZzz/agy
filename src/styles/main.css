@@ -157,8 +157,7 @@
 
 /* Scroll-Driven Animations — animate elements as they enter the view */
 .card,
-.project-card,
-.bento-card {
+.project-card {
     background: var(--color-surface);
     border: 1px solid rgba(255, 255, 255, 0.05);
     padding: var(--spacing-lg);
@@ -253,74 +252,12 @@
 }
 
 /* Flex layouts */
-.card-container,
 .project-gallery {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
     gap: var(--spacing-md);
     margin-top: var(--spacing-lg);
     width: 100%;
-}
-
-/* Certification Badge */
-.cert-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin: 1.5rem 0 3rem;
-    padding: 0.85rem 1.75rem;
-    background: linear-gradient(90deg, rgba(0, 68, 255, 0.1), rgba(0, 0, 0, 0.4));
-    border: 1px solid var(--color-accent);
-    border-radius: 50px;
-    font-size: clamp(0.8rem, 2.5vw, 1rem);
-    font-weight: 500;
-    color: var(--color-text-primary);
-    backdrop-filter: blur(12px);
-    box-shadow: 0 0 20px rgba(0, 68, 255, 0.2);
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
-    position: relative;
-    overflow: hidden;
-    max-width: 100%;
-    text-align: center;
-}
-
-/* Shimmer sweep on the badge */
-.cert-badge::after {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -75%;
-    width: 50%;
-    height: 200%;
-    background: linear-gradient(
-        105deg,
-        transparent 40%,
-        rgba(255, 255, 255, 0.12) 45%,
-        rgba(255, 255, 255, 0.2) 50%,
-        rgba(255, 255, 255, 0.12) 55%,
-        transparent 60%
-    );
-    animation: shimmer-sweep 4s ease-in-out 3s infinite;
-    pointer-events: none;
-}
-
-@keyframes shimmer-sweep {
-    0% { left: -75%; }
-    100% { left: 150%; }
-}
-
-.cert-badge:hover {
-    transform: translateY(-4px) scale(1.02);
-    box-shadow: 0 8px 30px rgba(0, 68, 255, 0.4);
-}
-
-.cert-badge svg {
-    color: var(--color-accent);
-    transition: transform 0.3s ease;
-}
-
-.cert-badge:hover svg {
-    transform: rotate(-12deg) scale(1.15);
 }
 
 .tech-stack {
@@ -386,25 +323,6 @@ nav {
     border-color: rgba(0, 68, 255, 0.22);
     box-shadow: 0 0 32px rgba(0, 68, 255, 0.1), 0 8px 24px rgba(0, 0, 0, 0.3);
 }
-
-/* ── Logo ── */
-.logo {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.95rem;
-    font-weight: 500;
-    color: var(--color-text-primary);
-    text-decoration: none;
-    white-space: nowrap;
-    transition: color var(--transition-fast);
-}
-
-.logo-prompt {
-    color: var(--color-accent);
-    font-weight: 700;
-    margin-right: 0.3em;
-}
-
-.logo:hover { color: var(--color-accent); }
 
 /* ── Nav links ── */
 .nav-links {
@@ -578,20 +496,6 @@ body.light-mode .main-header.scrolled nav {
     }
 }
 
-/* ── Theme-switch ripple overlay ── */
-.theme-ripple {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: -2;
-    pointer-events: none;
-    background-color: transparent;
-    clip-path: circle(0px at 50% 50%);
-}
-
-
 /* Scroll Indicator — enhanced with glow pulse */
 .scroll-indicator {
     margin-top: var(--spacing-xl);
@@ -632,32 +536,6 @@ body.light-mode .main-header.scrolled nav {
 /* =============================================
    About Section Utilities
    ============================================= */
-
-/* ─── About Narrative ─── */
-.about-narrative {
-    max-width: 800px;
-    margin: 0 auto 2rem;
-    text-align: left;
-    font-size: 1.15rem;
-    color: var(--color-text-secondary);
-    line-height: 1.8;
-    opacity: 0;
-    animation: auto linear section-heading-reveal both;
-    animation-timeline: view();
-    animation-range: entry 5% cover 30%;
-}
-
-@media (max-width: 768px) {
-    .about-narrative { font-size: 1rem; }
-}
-
-.about-narrative p {
-    margin-bottom: 1rem;
-}
-
-.about-narrative strong {
-    color: var(--color-text-primary);
-}
 
 .work-subtitle {
     color: var(--color-text-secondary);
@@ -759,59 +637,6 @@ body.light-mode .main-header.scrolled nav {
     justify-content: space-between;
 }
 
-.server-rack {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    height: 100%;
-    width: 100%;
-    gap: 0; /* Let connectors space them */
-}
-
-/* Server Rack Connector Cables */
-.rack-connector {
-    width: 2px;
-    height: 15px; /* compact cable spacing */
-    background: rgba(255, 255, 255, 0.08);
-    margin-left: 30px; /* Align perfectly with center of 32px node icon (14px pad + 16px half-width) */
-    position: relative;
-    transition: all 0.3s ease;
-    flex-shrink: 0;
-}
-
-.rack-connector[data-connector="0"].active { background: #00f0ff; box-shadow: 0 0 8px rgba(0, 240, 255, 0.6); }
-.rack-connector[data-connector="1"].active { background: #3b82f6; box-shadow: 0 0 8px rgba(59, 130, 246, 0.6); }
-.rack-connector[data-connector="2"].active { background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.6); }
-.rack-connector[data-connector="3"].active { background: #d946ef; box-shadow: 0 0 8px rgba(217, 70, 239, 0.6); }
-
-/* Blinking LEDs on server blades */
-.blade-telemetry {
-    display: flex;
-    gap: 4px;
-    margin-left: auto; /* Push to the far right of the blade */
-    padding-left: 10px;
-}
-
-.telemetry-dot {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
-    transition: background-color 0.3s ease;
-}
-
-.html-topo-node.active .telemetry-dot {
-    background: var(--node-color);
-    animation: blade-blink 1.2s infinite alternate;
-}
-
-.html-topo-node.active .telemetry-dot:nth-child(2) { animation-delay: 0.25s; }
-.html-topo-node.active .telemetry-dot:nth-child(3) { animation-delay: 0.5s; }
-
-@keyframes blade-blink {
-    0% { opacity: 0.25; }
-    100% { opacity: 1; }
-}
 
 /* Milestone colors & variables */
 .html-topo-node[data-milestone="0"] {
@@ -1848,10 +1673,6 @@ body.light-mode .yaml-filename {
     color: var(--terminal-green);
 }
 
-.terminal-line .error-text {
-    color: var(--color-error);
-}
-
 .terminal-line .info {
     color: var(--color-accent);
 }
@@ -2153,23 +1974,6 @@ body.light-mode .terminal-body {
 }
 
 /* =============================================
-   Cert Badges Row (About Section)
-   ============================================= */
-
-.cert-badges-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    justify-content: center;
-    margin: 1.5rem 0 3rem;
-}
-
-.cert-badges-row .cert-badge {
-    margin: 0;
-}
-
-
-/* =============================================
    Skills Section
    ============================================= */
 
@@ -2396,6 +2200,11 @@ body.light-mode .skill-group {
     white-space: nowrap;
 }
 
+/* display: inline-flex above would otherwise override the hidden attribute */
+.social-link[hidden] {
+    display: none;
+}
+
 .social-link:hover {
     background: rgba(0, 68, 255, 0.12);
     border-color: rgba(0, 68, 255, 0.35);
@@ -2461,9 +2270,6 @@ body.light-mode .social-link:hover {
     }
 }
 
-/* Staggered timeline nodes for 5 items */
-.timeline-node:nth-child(5) { animation-range: entry 16% cover 38%; }
-
 
 /* ── Hero title: pure black in light mode ── */
 body.light-mode .hero-title {
@@ -2485,14 +2291,11 @@ body.light-mode .hero-title {
     .snap-section .work-subtitle,
     .card,
     .project-card,
-    .bento-card,
-    .timeline-node,
     .experience,
     .social-link,
     .contact-form,
     .contact-terminal,
-    .skills-grid,
-    .traverse-card {
+    .skills-grid {
         animation: none !important;
         opacity: 0;
         transform: translateY(24px);
@@ -2509,14 +2312,11 @@ body.light-mode .hero-title {
     .snap-section .work-subtitle.revealed,
     .card.revealed,
     .project-card.revealed,
-    .bento-card.revealed,
-    .timeline-node.revealed,
     .experience.revealed,
     .social-link.revealed,
     .contact-form.revealed,
     .contact-terminal.revealed,
-    .skills-grid.revealed,
-    .traverse-card.revealed {
+    .skills-grid.revealed {
         opacity: 1 !important;
         transform: translateY(0) !important;
     }
@@ -2539,11 +2339,6 @@ body.light-mode .hero-title {
     body.light-mode .nav-links a:hover {
         color: var(--color-accent) !important;
     }
-
-    /* Responsive transition duration overrides for mobile viewports to prevent memory and freeze lag */
-    :root {
-        --theme-transition-duration: 600ms;
-    }
 }
 
 /* ─── Root theme transition variables safety fallback ─── */
@@ -2552,6 +2347,13 @@ body.light-mode .hero-title {
     --theme-toggle-y: 0px;
     --theme-toggle-r: 0px;
     --theme-transition-duration: 1300ms;
+}
+
+/* Shorter theme transition on mobile to prevent memory and freeze lag */
+@media (max-width: 768px) {
+    :root {
+        --theme-transition-duration: 600ms;
+    }
 }
 
 /* ─── Instant Capture Transition Bypass ─── */
