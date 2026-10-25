@@ -18,7 +18,22 @@ Every layer is a texture lookup or closed-form maths, and frames are drawn only 
 
 The About/Experience/Skills sections have my actual background: 7 years in infrastructure, started at SDC Networks in Kaloor doing real network troubleshooting, moved through Linux admin → Cloud Engineer → DevOps at Synnefo Solutions in Ernakulam. RHCSA and AWS SAA certified. Also been mentoring 700+ students across networking, Linux, cloud, and DevOps at Synnefo — which is what I spend most of my time on now.
 
-Work section links to my public repos (devops-tasks, linux-tasks, shell).
+The Work section has three case studies (context, what I did, result, with an architecture diagram each) and links to my public repos (devops-tasks, linux-tasks, shell).
+
+A few things to find:
+
+- **Skills are stars**: point at one (or tap it) to see when and in which role it came in; skills from the same role light up together, and the role links back to Experience.
+- **Mini-map** (`src/minimap.js`): the face-on Galaxy with the camera's real position on it and a marker per chapter. Always on in the margin of wide screens; between pages on smaller ones.
+- **Terminal** (`src/terminal.js`): press `~`, or the Terminal chip in Contact. Try `help`, `kubectl get pods`, `cd skills`.
+- **Sound** (`src/ambient.js`): off by default; the speaker in the header turns on a drone, synthesised live, that deepens as you fall towards Sgr A* and goes silent at the horizon.
+- **Physics everywhere** (all off with reduced motion, and quieter while a page is being read):
+  - The pointer is a small mass that lenses the Galaxy behind it: arcs, magnification and an Einstein ring (the final pass in `src/galaxy-world.js`).
+  - Flying between chapters at up to a quarter of light speed: relativistic aberration crowds the view forward and Doppler shifts it blue ahead (the scene is rendered wider while moving, so there are no edges to fold).
+  - Gravitational waves (`src/waves.js`) from every click and on arriving at a chapter: a ring of plus-polarised strain through the Galaxy, and the page itself stretches and squeezes; "Escape to the top" sets off a black-hole merger chirp.
+  - Skills orbit on small Kepler ellipses (`src/orbits.js`): Kepler's equation and third law, inner stars faster; a constellation stops under the pointer.
+  - Contact chips hang on springs (`src/throw.js`): drag one and it wobbles back; throw it hard and Sgr A* pulls it in early (1/r², tidal stretch, redshift), then it re-forms.
+  - Now and then a comet crosses an open stretch (`src/comet.js`), its ion tail pointing straight away from the Sun and its dust tail curving back along its track.
+- **Reduced motion**: with the OS setting on, the camera cuts between chapters instead of flying, the stars stop orbiting and leave no streaks, and the black hole's disk holds still.
 
 ## Stack
 
@@ -49,4 +64,5 @@ npm run build
 ## Image credits
 
 - Milky Way face-on map: [ESA/Gaia/DPAC, Stefan Payne-Wardenaar](https://www.esa.int/ESA_Multimedia/Images/2025/01/The_best_Milky_Way_map_by_Gaia), [CC BY-SA 3.0 IGO](https://creativecommons.org/licenses/by-sa/3.0/igo/) — re-encoded to WebP (`public/galaxy/faceon-*`)
+- Share image (`public/og-image.jpg`): made from the face-on map above, so the same licence applies
 - All-sky panorama: [ESO/S. Brunier](https://www.eso.org/public/images/eso0932a/), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) — re-encoded to WebP (`public/galaxy/sky-*`)

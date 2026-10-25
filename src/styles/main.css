@@ -1,6 +1,7 @@
 @import './tokens.css';
 @import './hero.css';
 @import './nav.css';
+@import './overlays.css';
 
 /* =============================================
    The Galaxy pages (everything after the hero)
@@ -38,9 +39,10 @@ html.lenis body {
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse 90% 80% at 40% 50%, rgba(3, 5, 10, 0.36), rgba(3, 5, 10, 0.225));
+    background: radial-gradient(ellipse 90% 80% at 40% 50%, rgba(3, 5, 10, 0.66), rgba(3, 5, 10, 0.5));
     opacity: var(--world-dim, 0);
     pointer-events: none;
+    will-change: opacity;   /* its own layer: dimming it as the page scrolls never repaints */
 }
 
 .world-canvas,
@@ -78,7 +80,12 @@ html.lenis body {
     position: absolute;
     inset: -45% -35% -60% -25%;
     z-index: -1;
-    background: radial-gradient(closest-side, rgba(2, 3, 6, 0.75), rgba(2, 3, 6, 0) 100%);
+    background: radial-gradient(closest-side, rgba(2, 3, 6, 0.88), rgba(2, 3, 6, 0) 100%);
+}
+
+.chapter,
+.minimap-caption {
+    text-shadow: var(--w-shadow);
 }
 
 .chapter-index {
@@ -86,7 +93,7 @@ html.lenis body {
     font-family: var(--font-mono);
     font-size: var(--text-xs);
     letter-spacing: 0.18em;
-    color: var(--w-muted);
+    color: var(--w-warm);
 }
 
 .chapter-name {
@@ -104,7 +111,7 @@ html.lenis body {
     font-family: var(--font-mono);
     font-size: var(--text-sm);
     letter-spacing: 0.04em;
-    color: var(--w-muted);
+    color: var(--w-text);
 }
 
 .scroller {
@@ -490,20 +497,6 @@ html.lenis body {
     scrollbar-color: var(--w-line-strong) transparent;
 }
 
-.code-pre {
-    margin: 0;
-    font: inherit;
-    white-space: pre-wrap;
-    word-break: break-all;
-}
-
-.yaml-key { color: var(--w-accent-text); }
-.yaml-val { color: var(--w-text); }
-.yaml-arr { color: var(--w-muted); }
-.yaml-class { color: var(--w-accent-text); font-weight: 600; }
-.yaml-comment { color: var(--w-muted); font-style: italic; }
-
-.code-pre::after,
 .terminal-cursor-blink::after {
     content: '';
     display: inline-block;
@@ -512,15 +505,6 @@ html.lenis body {
     margin-left: 2px;
     vertical-align: middle;
     background: var(--w-accent-text);
-}
-
-.code-pre::after {
-    opacity: 0;
-}
-
-.yaml-typing::after,
-.terminal-cursor-blink::after {
-    opacity: 1;
     animation: blink-cursor 1s step-end infinite;
 }
 
@@ -657,399 +641,934 @@ html.lenis body {
 
 
 /* =============================================
-   Experience
+   Floating pages: Experience, Skills and Work have no panels. Type, hairlines and points of
+   light sit straight on the Galaxy (dimmed behind the page), with a soft shadow to read by
    ============================================= */
 
-.console-layout {
-    display: grid;
-    grid-template-columns: 1fr 1.05fr;
-    gap: 1.5rem;
-    width: 100%;
-    align-items: start;
+.world-section,
+.finale {
+    text-shadow: var(--w-shadow);
 }
 
-.pipeline-container {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
+/* Boxes keep their own background: no halo inside them */
+.world-section .card:not(.card--plain),
+.world-section .chip,
+.world-section .code-window,
+.world-section input,
+.world-section textarea,
+.world-section .btn-primary,
+.finale .btn-primary {
+    text-shadow: none;
 }
 
-.html-topo-node {
-    display: flex;
-    align-items: stretch;
-    gap: 1rem;
+
+/* =============================================
+   Experience: a flight path from 2018 to now. It flies itself in when the page arrives;
+   the stops, Earlier/Later, a swipe or the arrow keys move between roles
+   ============================================= */
+
+.experience .section-head {
+    margin-bottom: 1.5rem;
+}
+
+.flight {
+    position: relative;
+    height: clamp(90px, 15vh, 160px);
+    margin: 0 0 2.75rem;
+}
+
+.flight-path {
+    position: absolute;
+    inset: 0;
     width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.flight-path path {
+    fill: none;
+    vector-effect: non-scaling-stroke;
+}
+
+.flight-path-base {
+    stroke: var(--w-line-strong);
+    stroke-width: 1;
+    stroke-dasharray: 2 6;
+}
+
+/* The way flown so far, in 10,000 K */
+.flight-path-lit {
+    stroke: var(--w-accent);
+    stroke-width: 1.5;
+    filter: drop-shadow(0 0 4px rgba(202, 218, 255, 0.6));
+}
+
+/* The craft: you, in 4,000 K (placed with a transform from JS) */
+.flight-craft {
+    position: absolute;
+    top: 0;
+    left: 0;
+    will-change: transform;
+    z-index: 2;
+    width: 10px;
+    height: 10px;
+    margin: -5px 0 0 -5px;
+    border-radius: 50%;
+    background: var(--w-warm);
+    box-shadow: 0 0 10px 3px rgba(255, 206, 166, 0.6), 0 0 32px 8px rgba(255, 150, 90, 0.22);
+    pointer-events: none;
+}
+
+.flight-stop {
+    position: absolute;
+    z-index: 1;
+    width: 32px;
+    height: 32px;
     padding: 0;
-    border: none;
-    background: transparent;
-    color: inherit;
-    font: inherit;
-    text-align: left;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    transform: translate(-50%, -50%);
     cursor: pointer;
 }
 
-.pipeline-track-wrapper {
-    position: relative;
-    display: flex;
-    flex-shrink: 0;
-    justify-content: center;
-    align-items: center;
-    width: 14px;
-}
-
-.pipeline-track-wrapper::before {
+.flight-stop::before {
     content: '';
     position: absolute;
-    top: -0.6rem;
-    bottom: -0.6rem;
-    width: 1px;
-    background: var(--w-line);
-}
-
-.html-topo-node:first-child .pipeline-track-wrapper::before { top: 50%; }
-.html-topo-node:last-child .pipeline-track-wrapper::before { bottom: 50%; }
-
-.pipeline-node {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    width: 10px;
-    height: 10px;
+    inset: 12px;
     border: 1px solid var(--w-line-strong);
     border-radius: 50%;
     background: var(--w-fog);
-    transition: background-color var(--motion-quick) var(--ease-out), box-shadow var(--motion-quick) var(--ease-out), border-color var(--motion-quick) var(--ease-out);
+    transition: inset var(--motion-quick) var(--ease-out), border-color var(--motion-quick) var(--ease-out), background-color var(--motion-quick) var(--ease-out);
 }
 
-.node-ring,
-.node-dot {
-    display: none;
+.flight-stop:hover::before {
+    inset: 10px;
+    border-color: var(--w-ink);
 }
 
-.stage-card {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    padding: 0.9rem 1.1rem;
-    border: 1px solid var(--w-line);
-    border-radius: var(--radius);
-    background: var(--w-panel);
-    transition: border-color var(--motion-quick) var(--ease-out), background-color var(--motion-quick) var(--ease-out), transform var(--motion-quick) var(--ease-out);
+.flight-stop.passed::before {
+    border-color: var(--w-accent);
+    background: var(--w-accent);
 }
 
-.stage-content {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
+.flight-stop.active::before {
+    inset: 8px;
+    border-color: var(--w-warm);
+    background: transparent;
 }
 
-.node-label-system {
+.flight-stop-year {
+    position: absolute;
+    top: calc(100% + 0.1rem);
+    left: 50%;
+    transform: translateX(-50%);
     font-family: var(--font-mono);
     font-size: var(--text-xs);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--w-muted);
-}
-
-.node-label-role {
-    font-family: var(--font-display);
-    font-size: var(--text-md);
-    font-weight: 700;
-    color: var(--w-muted);
+    letter-spacing: 0.06em;
+    color: var(--w-text);
     transition: color var(--motion-quick) var(--ease-out);
 }
 
-.node-label-sub {
-    font-size: var(--text-sm);
-    color: var(--w-muted);
+.flight-stop.active .flight-stop-year {
+    color: var(--w-warm);
 }
 
-.html-topo-node:hover .stage-card {
-    border-color: var(--w-line-strong);
+/* The role names the stop for screen readers; on screen it is the big title below */
+.flight-stop-role {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
 }
 
-.html-topo-node.active .stage-card {
-    border-color: var(--w-accent);
-    background: linear-gradient(var(--w-accent-soft), var(--w-accent-soft)), var(--w-panel);
-}
-
-.html-topo-node.active .node-label-role {
-    color: var(--w-ink);
-}
-
-.html-topo-node.active .pipeline-node {
-    border-color: var(--w-accent);
-    background: var(--w-accent);
-    box-shadow: 0 0 0 4px var(--w-accent-soft);
-}
-
-.html-topo-node:focus-visible {
-    outline: none;
-}
-
-.html-topo-node:focus-visible .stage-card {
-    outline: 2px solid var(--w-accent);
+.flight-stop:focus-visible {
+    outline: 1px solid var(--w-accent);
     outline-offset: 2px;
 }
 
-.telemetry-panel {
+.flight-detail {
+    max-width: 46rem;
+    min-height: 17.5rem;
+    touch-action: pan-y;   /* sideways swipes are ours, vertical ones scroll */
+}
+
+.flight-nav {
     display: flex;
-    flex-direction: column;
-    gap: 1.1rem;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 2rem;
 }
 
-.telemetry-panel:hover {
-    transform: none;
+.flight-nav .chip {
+    text-shadow: none;
 }
 
-.inspector-header {
-    padding-bottom: 1.1rem;
-    border-bottom: 1px solid var(--w-hair);
+.flight-nav .chip:disabled {
+    opacity: 0.5;
+    cursor: default;
+    border-color: var(--w-line);
 }
 
-.header-details .eyebrow {
-    margin-bottom: 0.7rem;
+.flight-count {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.08em;
+    color: var(--w-muted);
+    font-variant-numeric: tabular-nums;
 }
 
-.system-title {
+.flight-status {
+    margin-bottom: 0.75rem;
+    color: var(--w-warm);
+}
+
+.flight-title {
     font-family: var(--font-display);
-    font-size: var(--text-xl);
-    font-weight: 700;
-    line-height: 1.2;
+    font-size: clamp(1.9rem, 4.2vw, 3.2rem);
+    font-weight: 500;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
     color: var(--w-ink);
 }
 
-.system-company {
-    margin-top: 0.35rem;
+.flight-meta {
+    margin-top: 0.6rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
     color: var(--w-muted);
 }
 
-.system-period {
-    margin-top: 0.2rem;
+.flight-description {
+    max-width: 38rem;
+    margin: 1.25rem 0 1rem;
+    font-size: var(--text-lg);
+    line-height: 1.5;
+    color: var(--w-text);
+}
+
+.flight-achievements {
+    list-style: none;
+}
+
+.flight-achievements li {
+    position: relative;
+    padding-left: 1.25rem;
+    font-size: var(--text-base);
+    line-height: 1.85;
+    color: var(--w-text);
+}
+
+.flight-achievements li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.82em;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--w-accent);
+    box-shadow: 0 0 6px rgba(202, 218, 255, 0.7);
+}
+
+.flight-tools {
+    margin-top: 1.25rem;
     font-family: var(--font-mono);
-    font-size: var(--text-sm);
+    font-size: var(--text-xs);
+    letter-spacing: 0.06em;
     color: var(--w-accent-text);
 }
 
-.inspector-description {
-    margin-top: 0.85rem;
-    font-size: var(--text-base);
-    line-height: 1.7;
-    color: var(--w-muted);
-}
-
-.inspector-metrics {
-    display: grid;
-    grid-template-columns: 120px 1fr;
-    gap: 0.7rem;
-}
-
-.gauge-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.gauge-ring-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 80px;
-    height: 80px;
-}
-
-.gauge-ring-svg {
-    transform: rotate(-90deg);
-}
-
-.gauge-ring-fill,
-.gauge-ring-bg {
-    stroke-width: 4;
-}
-
-.gauge-ring-bg {
-    stroke: var(--w-hair);
-}
-
-.gauge-ring-fill {
-    stroke: var(--w-accent);
-    stroke-linecap: round;
-    transition: stroke-dashoffset var(--motion-enter) var(--ease-out);
-}
-
-.gauge-percentage-text {
-    position: absolute;
-    font-family: var(--font-display);
-    font-size: var(--text-md);
-    font-weight: 700;
-    color: var(--w-ink);
-}
-
-.gauge-label,
-.inspector-card-title,
-.bento-label {
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--w-muted);
-}
-
-.gauge-label {
-    margin-top: 0.6rem;
-}
-
-.sliders-card {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.comp-slider {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-}
-
-.slider-info {
-    display: flex;
-    justify-content: space-between;
-    font-size: var(--text-sm);
-}
-
-.slider-name {
-    color: var(--w-muted);
-}
-
-.slider-val {
-    color: var(--w-ink);
-    font-weight: 600;
-}
-
-.slider-track {
-    height: 3px;
-    border-radius: 3px;
-    background: var(--w-hair);
-    overflow: hidden;
-}
-
-.slider-fill {
-    height: 100%;
-    border-radius: 3px;
-    background: var(--w-accent);
-    transition: width var(--motion-enter) var(--ease-out);
-}
-
-.bento-stats-container {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.7rem;
-}
-
-.metric-bento-card {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.bento-value {
-    font-family: var(--font-display);
-    font-size: var(--text-md);
-    font-weight: 700;
-    color: var(--w-ink);
-}
-
-.telemetry-panel .code-body {
-    min-height: 190px;
-    max-height: 250px;
-}
-
-.mobile-topo-nav {
-    display: none;
-}
-
-@media (max-width: 900px) {
-    .console-layout {
-        grid-template-columns: 1fr;
-    }
-
-    .topology-panel {
-        display: none;
-    }
-
-    .mobile-topo-nav {
-        display: flex;
-        gap: 0.5rem;
-        overflow-x: auto;
+@media (max-width: 768px) {
+    .experience .section-head {
         margin-bottom: 1rem;
-        padding-bottom: 0.75rem;
-        scrollbar-width: none;
     }
 
-    .mobile-topo-nav::-webkit-scrollbar {
-        display: none;
+    .flight-detail {
+        min-height: 21rem;
     }
 
-    .mobile-nav-btn {
-        flex-shrink: 0;
+    .flight-nav {
+        justify-content: space-between;
     }
-}
 
-@media (max-width: 480px) {
-    .inspector-metrics {
-        grid-template-columns: 1fr;
+    .flight {
+        height: 80px;
+        margin: 0.5rem 0 2.25rem;
+    }
+
+    .flight-description {
+        font-size: var(--text-base);
+    }
+
+    .flight-achievements li {
+        font-size: var(--text-sm);
+        line-height: 1.75;
     }
 }
 
 
 /* =============================================
-   Skills, Work, Education
+   Skills: a sky chart. Each category is a constellation, stars zigzagging down it joined by
+   faint lines, a star's size its magnitude (years in use)
    ============================================= */
 
-.skills-grid,
-.project-gallery,
-.education-grid {
+.sky-chart {
     display: grid;
-    gap: 1.25rem;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 2.5rem 1.5rem;
     width: 100%;
 }
 
-.skills-grid {
-    grid-template-columns: repeat(auto-fit, minmax(min(18.75rem, 100%), 1fr));
+/* Phones only: one chip per constellation */
+.sky-tabs {
+    display: none;
 }
 
-.skill-group .tag-list {
-    margin-top: 0;
+.constellation-name {
+    display: flex;
+    align-items: flex-end;
+    min-height: 3.6em;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--w-hair);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--w-muted);
 }
 
-.project-gallery {
-    grid-template-columns: repeat(auto-fit, minmax(min(17.5rem, 100%), 1fr));
+.constellation-name .cat-id {
+    color: var(--w-warm);
 }
 
-.project-card {
+.constellation-chart {
+    position: relative;
+    height: calc(var(--rows) * 1.95rem);
+}
+
+.constellation-chart svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.constellation-chart polyline {
+    fill: none;
+    stroke: var(--w-line);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+    transition: stroke var(--motion-quick) var(--ease-out);
+}
+
+.constellation:hover polyline {
+    stroke: var(--w-line-strong);
+}
+
+/* Each star is a button: the point is at its anchor, the name to its right */
+.skill-star {
+    --d: 4px;
+    --glow: 0 0 0 transparent;
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.2rem 0.4rem 0.2rem 0;
+    border: 0;
+    background: none;
+    color: var(--w-text);
+    font-family: var(--font-primary);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    line-height: 1.3;
+    white-space: nowrap;
+    text-shadow: inherit;
+    transform: translate(calc(var(--d) / -2), -50%);
+    will-change: transform;   /* orbiting: moved on its own layer, never repainted */
+    cursor: pointer;
+    transition: color var(--motion-quick) var(--ease-out), opacity var(--motion-quick) var(--ease-out);
+}
+
+.skill-star[data-mag='0'] { --d: 4px; }
+.skill-star[data-mag='1'] { --d: 5px; --glow: 0 0 5px 1px rgba(202, 218, 255, 0.35); }
+.skill-star[data-mag='2'] { --d: 7px; --glow: 0 0 8px 2px rgba(202, 218, 255, 0.45); }
+.skill-star[data-mag='3'] { --d: 9px; --glow: 0 0 12px 3px rgba(202, 218, 255, 0.55); }
+
+.skill-star::before {
+    content: '';
+    flex-shrink: 0;
+    width: var(--d);
+    height: var(--d);
+    border-radius: 50%;
+    background: var(--w-ink);
+    box-shadow: var(--glow);
+    transition: background-color var(--motion-quick) var(--ease-out), box-shadow var(--motion-quick) var(--ease-out), transform var(--motion-quick) var(--ease-out);
+}
+
+.skill-star[data-mag='0']::before {
+    background: var(--w-muted);
+}
+
+.skill-star:hover {
+    color: var(--w-ink);
+}
+
+.sky-chart.has-lit .skill-star {
+    opacity: 0.55;
+}
+
+.sky-chart.has-lit .skill-star.is-lit {
+    opacity: 1;
+    color: var(--w-ink);
+}
+
+.skill-star.is-lit::before {
+    background: var(--w-accent);
+    box-shadow: 0 0 8px 2px var(--w-accent), 0 0 20px 4px rgba(202, 218, 255, 0.35);
+    transform: scale(1.3);
+}
+
+.skill-star.is-current {
+    color: var(--w-accent-text);
+}
+
+/* 4,000 K: the star you've pinned */
+.skill-star[aria-pressed='true']::before {
+    background: var(--w-warm);
+    box-shadow: 0 0 8px 2px var(--w-warm), 0 0 20px 4px rgba(255, 206, 166, 0.35);
+}
+
+.skill-star:focus-visible {
+    outline: 1px solid var(--w-accent);
+    outline-offset: 2px;
+}
+
+/* The catalogue entry: stays at the bottom of the screen while the chart is in view */
+.skill-readout {
+    position: relative;
+    bottom: 0;
+    z-index: 2;
+    min-height: 6.5rem;
+    margin-top: 2.5rem;
+    padding: 1.25rem 0 1.5rem;
+    border-top: 1px solid var(--w-hair);
     display: flex;
     flex-direction: column;
+    justify-content: center;
+    gap: 0.35rem;
+}
+
+.skill-readout.is-filled {
+    position: sticky;
+    border-top-color: var(--w-line);
+    background: rgba(3, 5, 10, 0.94);   /* opaque, not a backdrop blur: that would re-blur the live Galaxy every frame */
+}
+
+.skill-readout-empty {
+    font-size: var(--text-sm);
+    color: var(--w-muted);
+}
+
+.skill-readout-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.9rem;
+}
+
+.skill-readout-head .cat-id {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--w-warm);
+}
+
+.skill-readout-name {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: 500;
+    color: var(--w-ink);
+}
+
+.skill-readout-cat {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--w-muted);
+}
+
+.skill-readout-body {
+    font-size: var(--text-base);
+    line-height: 1.6;
+    color: var(--w-muted);
+}
+
+.skill-readout-role {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-weight: 600;
+    color: var(--w-accent-text);
+    text-decoration: underline;
+    text-decoration-color: var(--w-line-strong);
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.skill-readout-role:hover {
+    text-decoration-color: currentColor;
+}
+
+.skill-readout-role::after {
+    content: ' →';
+}
+
+@media (max-width: 1100px) {
+    .sky-chart {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .constellation-name {
+        min-height: 0;
+    }
+}
+
+/* Phones: one constellation at a time, picked with the chips or a sideways swipe */
+@media (max-width: 700px) {
+    .sky-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin: 0 -1.25rem 1.75rem;
+        padding: 0 1.25rem 0.25rem;
+        overflow-x: auto;
+        scrollbar-width: none;
+        text-shadow: none;
+    }
+
+    .sky-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .sky-tabs .chip {
+        flex-shrink: 0;
+    }
+
+    .sky-chart {
+        grid-template-columns: minmax(0, 1fr);
+        touch-action: pan-y;
+    }
+
+    .constellation:not(.is-shown) {
+        display: none;
+    }
+
+    .constellation-name {
+        display: none;   /* the active chip names it */
+    }
+
+    .constellation-chart {
+        height: calc(var(--rows) * 2.4rem);
+    }
+
+    .skill-star {
+        font-size: var(--text-base);
+    }
+}
+
+
+/* =============================================
+   Work: one case to a screen. The number is the headline; the architecture is drawn in
+   hairlines beneath it
+   ============================================= */
+
+/* The switch: the three headline numbers in a row; the bright one is the case below */
+.case-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+    border-bottom: 1px solid var(--w-line);
+}
+
+.case-tab {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0 0 1.4rem;
+    border: 0;
+    background: none;
+    color: inherit;
+    text-align: left;
+    text-shadow: inherit;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity var(--motion-quick) var(--ease-out);
+}
+
+.case-tab:hover {
+    opacity: 0.85;
+}
+
+.case-tab.active {
+    opacity: 1;
+}
+
+.case-tab::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 1px;
+    background: var(--w-accent);
+    box-shadow: 0 0 8px rgba(202, 218, 255, 0.7);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--motion-enter) var(--ease-out);
+}
+
+.case-tab.active::after {
+    transform: none;
+}
+
+.case-tab:focus-visible {
+    outline: 1px solid var(--w-accent);
+    outline-offset: 4px;
+}
+
+.case-tab-value {
+    font-family: var(--font-display);
+    font-size: clamp(2.2rem, 7vw, 5.5rem);
+    font-weight: 200;
+    line-height: 0.95;
+    letter-spacing: -0.05em;
+    color: var(--w-ink);
+    font-variant-numeric: tabular-nums;
+}
+
+.case-tab.active .case-tab-value {
+    text-shadow: 0 0 40px rgba(202, 218, 255, 0.3), var(--w-shadow);
+}
+
+.case-tab-label {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.04em;
+    line-height: 1.5;
+    color: var(--w-text);
+}
+
+.case-study {
+    touch-action: pan-y;
+}
+
+.case-study[hidden] {
+    display: none;
+}
+
+/* The number is in the switch above; the case keeps its caption */
+.case-study .case-metric-value {
+    display: none;
+}
+
+.case-label {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.25rem 1rem;
+    margin-bottom: 1.75rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--w-muted);
+}
+
+.case-label .cat-id {
+    color: var(--w-warm);
+}
+
+.case-role {
+    color: var(--w-accent-text);
+    letter-spacing: 0.06em;
+    text-transform: none;
+}
+
+.case-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(2rem, 5vw, 4.5rem);
+    align-items: start;
+}
+
+/* The number and its diagram on the left, the story on the right */
+.case-figure {
+    order: -1;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.case-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.case-metric-value {
+    font-family: var(--font-display);
+    font-size: clamp(4.5rem, 11vw, 9rem);
+    font-weight: 200;
+    line-height: 0.9;
+    letter-spacing: -0.05em;
+    color: var(--w-ink);
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 40px rgba(202, 218, 255, 0.25), var(--w-shadow);
+}
+
+.case-metric-label {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--w-warm);
+}
+
+.case-study h3 {
+    margin-bottom: 1.5rem;
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 3vw, 2.4rem);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    color: var(--w-ink);
+}
+
+.case-steps {
+    display: grid;
+    gap: 1.1rem;
+}
+
+.case-steps dt {
+    margin-bottom: 0.2rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--w-muted);
+}
+
+.case-steps dd {
+    font-size: var(--text-base);
+    line-height: 1.7;
+    color: var(--w-text);
+}
+
+/* The result is the line to remember */
+.case-steps > div:last-child dd {
+    color: var(--w-ink);
+    font-size: var(--text-md);
+    font-weight: 500;
+}
+
+/* Tags as a quiet mono line, not pills */
+.case-study .tag-list {
+    gap: 0.4rem 1.1rem;
+    margin-top: 1.75rem;
+}
+
+.case-study .tag {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.06em;
+    color: var(--w-accent-text);
+}
+
+/* Architecture diagrams: hairline boxes, mono labels, the key component in the accent */
+.case-diagram {
+    width: 100%;
+    max-width: 30rem;
+    height: auto;
+    overflow: visible;
+}
+
+.case-diagram text {
+    fill: var(--w-text);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-anchor: middle;
+}
+
+.case-diagram .d-sub {
+    fill: var(--w-muted);
+    font-size: 10px;
+}
+
+.case-diagram .d-zone-label {
+    text-anchor: start;
+}
+
+.case-diagram .d-box rect {
+    fill: rgba(3, 5, 10, 0.78);
+    stroke: var(--w-line-strong);
+    stroke-width: 1;
+}
+
+.case-diagram .d-box--accent rect {
+    fill: var(--w-accent-soft);
+    stroke: var(--w-accent);
+}
+
+.case-diagram .d-box--faded rect {
+    stroke-dasharray: 3 3;
+}
+
+.case-diagram .d-box--faded text {
+    fill: var(--w-muted);
+}
+
+.case-diagram .d-zone {
+    fill: none;
+    stroke: var(--w-line);
+    stroke-dasharray: 2 4;
+}
+
+.case-diagram .d-flow,
+.case-diagram .d-link {
+    fill: none;
+    stroke: var(--w-accent);
+    stroke-width: 1;
+}
+
+.case-diagram .d-link {
+    stroke: var(--w-line-strong);
+    stroke-dasharray: 2 3;
+}
+
+.case-diagram marker path {
+    fill: var(--w-accent);
+}
+
+.case-diagram .d-fleet rect {
+    fill: var(--w-accent-soft);
+    stroke: var(--w-line-strong);
+    stroke-width: 0.75;
+}
+
+/* Data moves along the flows while a case is under the pointer */
+@media (prefers-reduced-motion: no-preference) {
+    .case-study:hover .d-flow {
+        stroke-dasharray: 4 3;
+        animation: case-flow 0.9s linear infinite;
+    }
+}
+
+@keyframes case-flow {
+    to { stroke-dashoffset: -7; }
+}
+
+/* Open source: a plain list, one hairline per repo */
+.oss {
+    margin-top: 3rem;
+}
+
+.oss-list {
+    list-style: none;
+}
+
+.oss-row {
+    display: grid;
+    grid-template-columns: 11rem minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 2rem;
+    padding: 1.1rem 0;
+    border-top: 1px solid var(--w-hair);
     color: inherit;
     text-decoration: none;
 }
 
-.project-card h3::after {
+.oss-list li:last-child .oss-row {
+    border-bottom: 1px solid var(--w-hair);
+}
+
+.oss-name {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: 500;
+    color: var(--w-ink);
+    transition: color var(--motion-quick) var(--ease-out);
+}
+
+.oss-name::after {
     content: ' ↗';
     color: var(--w-accent-text);
 }
 
-.project-card p {
+.oss-row:hover .oss-name {
+    color: var(--w-accent-text);
+}
+
+.oss-desc {
     font-size: var(--text-base);
-    line-height: 1.7;
     color: var(--w-muted);
 }
 
-.project-card .tag-list {
-    margin-top: auto;
-    padding-top: 1.25rem;
+.oss-tags {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--w-muted);
+    white-space: nowrap;
+}
+
+@media (max-width: 860px) {
+    .case-body {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .case-tabs {
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .case-tab {
+        padding-bottom: 1rem;
+    }
+
+    .case-tab-label {
+        display: none;   /* the case's own title says it, just below */
+    }
+
+    .oss-row {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.3rem;
+    }
+
+    .oss-tags {
+        white-space: normal;
+    }
+}
+
+
+/* =============================================
+   Education
+   ============================================= */
+
+.education-grid {
+    display: grid;
+    gap: 1.25rem;
+    width: 100%;
 }
 
 .education-grid {
@@ -1366,6 +1885,28 @@ html.lenis body {
 
 .finale-escape::after {
     content: '↑';
+}
+
+.finale-hint {
+    margin-top: 1.25rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--w-muted);
+}
+
+.finale-hint kbd {
+    padding: 0.1em 0.45em;
+    border: 1px solid var(--w-line-strong);
+    border-radius: 3px;
+    font-family: inherit;
+    color: var(--w-ink);
+}
+
+/* Touch screens have no ~ key: the Terminal chip in Contact opens it */
+@media (hover: none) {
+    .finale-hint {
+        display: none;
+    }
 }
 
 .finale-note {

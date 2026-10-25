@@ -80,6 +80,7 @@ export function createGravity({ texts, shells, start = 0.06, peel = 0.28, onRend
         bodies.forEach(({ el }) => {
             el.style.transform = '';
             el.style.opacity = '';
+            el.style.pointerEvents = '';
         });
         splits.forEach(s => s.revert());   // the original text, exactly as it was
         splits = [];
@@ -102,8 +103,12 @@ export function createGravity({ texts, shells, start = 0.06, peel = 0.28, onRend
             if (s === 0) {
                 b.el.style.transform = '';
                 b.el.style.opacity = '';
+                b.el.style.pointerEvents = '';
                 continue;
             }
+            // A falling fragment can't be clicked (fallen in, it would sit invisibly over the
+            // finale's Escape button)
+            b.el.style.pointerEvents = 'none';
             const r = Math.max(b.r0 * (1 + Math.cos(freeFallAngle(s))) / 2, 0.5);
             const phi = b.phi0 + 0.6 * (Math.sqrt(b.r0 / Math.max(r, horizon * 0.5)) - 1);
             // Tidal stretch: grows from 1 as the fragment falls, about 5× at three horizon radii

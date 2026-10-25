@@ -5,6 +5,13 @@ import { initTransitions } from './transitions.js';
 import gsap from 'gsap';
 import { SplitText } from 'gsap/SplitText';
 import { MOTION, spring } from './motion.js';
+import { createMinimap } from './minimap.js';
+import { createAmbient } from './ambient.js';
+import { createTerminal } from './terminal.js';
+import { createWaves } from './waves.js';
+import { createOrbits } from './orbits.js';
+import { createThrowables } from './throw.js';
+import { createComets } from './comet.js';
 
 // Reveal the document once main JS and styles have loaded
 document.documentElement.style.visibility = 'visible';
@@ -86,10 +93,22 @@ const worldCanvas = document.getElementById('world-canvas');
 let world = null;
 if (worldCanvas) {
     try {
-        world = new GalaxyWorld(worldCanvas, { mobile: isMobile });
+        world = new GalaxyWorld(worldCanvas, { mobile: isMobile, reducedMotion });
     } catch {
         world = null; // the plain dark backdrop still shows
     }
+}
+
+// ─── Physics on the page: waves, the pointer's lens, comets ───
+const waves = createWaves({ world, reducedMotion });
+const comets = world && !reducedMotion ? createComets({ world, container: document.getElementById('world') }) : null;
+let throwables = null;   // the contact chips (set up below, once the page is built)
+
+// The pointer is a small mass: it lenses the Galaxy behind it (pointers that hover only)
+if (world && window.matchMedia('(hover: hover)').matches) {
+    document.addEventListener('pointermove', e => { if (e.pointerType !== 'touch') world.setCursor(e.clientX, e.clientY); }, { passive: true });
+    document.documentElement.addEventListener('pointerleave', () => world.setCursor(null));
+    window.addEventListener('blur', () => world.setCursor(null));
 }
 
 // ─── Header: active chapter, gliding underline, scroll progress ───
@@ -98,6 +117,15 @@ const navAnchors = document.querySelectorAll('.nav-links a[href^="#"]');
 const indicator = document.querySelector('.nav-indicator');
 const sectionIds = ['home', ...[...document.querySelectorAll('.world-section')].map(s => s.id)];
 let activeIndex = -1;
+
+// Smooth scrolling (set once the scroll choreography starts, at the end of this file)
+let lenis = null;
+function scrollToSection(selector) {
+    const target = document.querySelector(selector);
+    if (!target) return;
+    if (lenis) lenis.scrollTo(target, { duration: 2, easing: spring });
+    else target.scrollIntoView();
+}
 
 // The underline moves to the active chapter on the shared spring (and hides on the hero)
 function placeIndicator(immediate = false) {
@@ -114,7 +142,10 @@ function onStation(u) {
         activeIndex = index;
         navAnchors.forEach(a => a.classList.toggle('active', a.getAttribute('href') === `#${sectionIds[index]}`));
         placeIndicator();
+        minimap?.setActive(index - 1);
     }
+    inWorld = u > 0.5;
+    updateMinimap();
     const progress = (maxScroll > 0 ? Math.min(Math.max(window.scrollY / maxScroll, 0), 1) : 0).toFixed(3);
     if (header && progress !== lastProgress) {
         lastProgress = progress;
@@ -147,7 +178,22 @@ const chapterData = document.getElementById('chapter-data');
 let chapterShown = -1;
 let lastShown = '';
 
+// ─── Mini-map: wide screens keep it in the margin; narrower ones show it between pages ───
+const wideMargin = window.matchMedia('(min-width: 1600px)');
+let inWorld = false, openK = 0, finaleK = 0;
+const minimap = world ? createMinimap({ chapters: CHAPTERS, sectionIds: sectionIds.slice(1), onSelect: scrollToSection }) : null;
+function updateMinimap() {
+    minimap?.setVisible(inWorld && finaleK < 0.02 && (wideMargin.matches || openK > 0.5));
+}
+
 function onOpenStretch(k, index, finale) {
+    openK = k;
+    finaleK = finale;
+    ambient.update({ finale });
+    // Physics is quiet over a page being read and full strength between pages
+    world?.setLensStrength(0.35 + 0.65 * k);
+    comets?.setOpen(finale > 0 ? 0 : k);
+    if (finale > 0.055) throwables?.reset();   // just before the page itself starts to fall (gravity starts at 0.06)
     // Dim the scene behind a page while it is read; full brightness between pages and in the finale
     // Set on #world itself (its ::after uses it), so only that element restyles
     const dim = (1 - Math.max(k, finale)).toFixed(3);
@@ -157,6 +203,8 @@ function onOpenStretch(k, index, finale) {
     }
     if (!chapter) return;
     if (index >= 0 && index !== chapterShown && CHAPTERS[index]) {
+        // Arriving at a new place: a gentle gravitational wave from the middle of the screen
+        if (chapterShown !== -1 && k > 0.3) waves.emit(window.innerWidth / 2, window.innerHeight / 2, 0.7, { page: false });
         chapterShown = index;
         chapterIndex.textContent = `${String(index + 1).padStart(2, '0')} / ${String(CHAPTERS.length).padStart(2, '0')}`;
         chapterName.textContent = CHAPTERS[index].name;
@@ -207,13 +255,28 @@ function formatExtra(myr, clock) {
     if (Math.abs(myr) < 0.5) return 'now';
     return `t ${myr > 0 ? '+' : '−'}${Math.abs(myr).toFixed(0)} million years`;
 }
+const ambient = createAmbient();
 if (world && readout) {
     let shown = '', shownExtra = '';
-    world.onReadout = ({ kpc, myr, clock }) => {
+    world.onReadout = ({ x, z, kpc, myr, clock }) => {
         const text = formatDistance(kpc), extra = formatExtra(myr, clock);
         if (text !== shown) readout.textContent = shown = text;
         if (readoutExtra && extra !== shownExtra) readoutExtra.textContent = shownExtra = extra;
+        minimap?.setPosition(x, z);
+        ambient.update({ kpc });
     };
+}
+
+// ─── Sound: off until asked for ───
+const soundBtn = document.getElementById('sound-toggle');
+const syncSound = () => {
+    soundBtn.setAttribute('aria-pressed', String(ambient.on));
+    soundBtn.setAttribute('aria-label', ambient.on ? 'Mute ambient sound' : 'Play ambient sound');
+};
+if (soundBtn && window.AudioContext) {
+    soundBtn.addEventListener('click', () => { ambient.setOn(!ambient.on); syncSound(); });
+} else {
+    soundBtn?.remove();
 }
 
 // ─── Instrument panels: a soft light follows the cursor ───
@@ -278,230 +341,87 @@ if (themeBtn) {
     });
 }
 
-// ─── DevOps Console: Experience Cloud Topology ───
+// ─── Experience: the flight path, oldest role first ───
 const MILESTONE_DATA = [
     {
         title: 'Network Administrator',
         company: 'SDC Networks, Kaloor',
         period: '2018 — 2020',
         status: 'Learning',
-        efficiency: '88',
-        focusAreas: [
-            { name: 'Physical Networking', val: 85 },
-            { name: 'Firewalls & Sec', val: 75 },
-            { name: 'Support & Triage', val: 65 }
+        description: 'Where it started: real network problems, on real hardware, with users waiting.',
+        achievements: [
+            'Maintained the primary LAN/WAN routing tables',
+            'Configured secure remote-access VPN tunnels',
+            'Kept systems available through L2/L3 triage',
         ],
-        bento1: { label: 'Environment', val: 'On-Premises' },
-        bento2: { label: 'Key Challenge', val: 'Hardware Routing' },
-        description: 'Maintained primary LAN/WAN routing tables, configured secure remote-access VPN tunnels, and maximized system availability through L2/L3 triage.',
-        yaml: `apiVersion: sreejith.devops/v1
-kind: CareerMilestone
-metadata:
-  name: network-administrator
-  company: "SDC Networks, Kaloor"
-  period: "2018-2020"
-spec:
-  role: "Network Administrator"
-  routingProtocols: ["BGP", "OSPF", "VLANs"]
-  firewallSystems: ["pfSense", "Cisco ASA"]
-  hardwareVendor: ["Cisco", "MikroTik"]
-  achievements:
-    - "Maintained primary LAN/WAN routing tables"
-    - "Configured secure remote-access VPN tunnel"
-    - "Maximized system availability, L2/L3 triage"`
+        tools: ['BGP', 'OSPF', 'VLANs', 'pfSense', 'Cisco ASA', 'MikroTik'],
     },
     {
         title: 'Linux Administrator',
         company: 'Synnefo Solutions, Ernakulam',
         period: '2020 — 2022',
         status: 'Scaling',
-        efficiency: '92',
-        focusAreas: [
-            { name: 'Linux OS Mgmt', val: 90 },
-            { name: 'Bash Scripting', val: 80 },
-            { name: 'Issue Resolution', val: 75 }
+        description: 'More than 100 bare-metal and virtual servers, and a rule: anything done twice gets scripted.',
+        achievements: [
+            'Managed 100+ bare-metal and VM servers',
+            'Cut deployment time by 70% with automation',
+            'Hardened every OS: zero breaches',
         ],
-        bento1: { label: 'Server Count', val: '100+ Nodes' },
-        bento2: { label: 'Key Challenge', val: 'System Hardening' },
-        description: 'Managed 100+ bare-metal & VM servers, reducing system deployment times by 70% through automation. Hardened operating systems resulting in zero breaches.',
-        yaml: `apiVersion: sreejith.devops/v1
-kind: CareerMilestone
-metadata:
-  name: linux-administrator
-  company: "Synnefo Solutions"
-  period: "2020-2022"
-spec:
-  role: "Linux Administrator"
-  distributions: ["RHEL", "CentOS", "Ubuntu"]
-  securityPolicies: ["SELinux", "iptables"]
-  automation: "Bash Scripting & Ansible"
-  achievements:
-    - "Managed 100+ bare-metal & VM servers"
-    - "Reduced system deployment times by 70%"
-    - "Hardened operating systems, zero breaches"`
+        tools: ['RHEL', 'CentOS', 'Ubuntu', 'SELinux', 'iptables', 'Bash', 'Ansible'],
     },
     {
         title: 'Cloud Engineer',
         company: 'Synnefo Solutions, Ernakulam',
         period: '2022 — 2024',
         status: 'Transitioning',
-        efficiency: '95',
-        focusAreas: [
-            { name: 'Cloud Architecture', val: 92 },
-            { name: 'Migration Work', val: 85 },
-            { name: 'Cost Optimization', val: 78 }
+        description: 'Moving workloads to the cloud without anyone noticing, and paying less for it.',
+        achievements: [
+            'Led 20+ zero-downtime cloud migrations',
+            'Cut infrastructure costs by 40%',
+            'Designed high-availability, multi-AZ infrastructure',
         ],
-        bento1: { label: 'Cloud Focus', val: 'AWS & GCP' },
-        bento2: { label: 'Key Challenge', val: 'Zero-Downtime' },
-        description: 'Led 20+ zero-downtime cloud migrations and cut platform infrastructure costs by 40% while designing high-availability infrastructure.',
-        yaml: `apiVersion: sreejith.devops/v1
-kind: CareerMilestone
-metadata:
-  name: cloud-engineer
-  company: "Synnefo Solutions"
-  period: "2022-2024"
-spec:
-  role: "Cloud Engineer"
-  platforms: ["AWS", "GCP"]
-  components: ["VPC", "EC2", "RDS", "Route53"]
-  redundancy: "Multi-AZ & Auto-Scaling"
-  achievements:
-    - "Led 20+ zero-downtime cloud migrations"
-    - "Cut platform infrastructure costs by 40%"
-    - "Designed high-availability infrastructure"`
+        tools: ['AWS', 'GCP', 'VPC', 'EC2', 'RDS', 'Route 53', 'Auto Scaling'],
     },
     {
         title: 'Junior DevOps Engineer',
         company: 'Synnefo Solutions, Ernakulam',
         period: '2024 — 2025',
         status: 'Automating',
-        efficiency: '96',
-        focusAreas: [
-            { name: 'CI/CD Pipelines', val: 88 },
-            { name: 'Docker Containers', val: 85 },
-            { name: 'Monitoring Alerts', val: 82 }
+        description: 'From servers to containers, and from manual releases to pipelines.',
+        achievements: [
+            'Migrated legacy bare-metal systems to Docker',
+            'Automated infrastructure monitoring and alerts',
+            'Sped up the CI/CD build pipelines',
         ],
-        bento1: { label: 'Deployments', val: 'Fully Dockerized' },
-        bento2: { label: 'Key Challenge', val: 'Pipeline Speed' },
-        description: 'Migrated legacy bare-metal systems to containerized Docker environments. Automated infrastructure monitoring alerts and optimized CI/CD pipelines.',
-        yaml: `apiVersion: sreejith.devops/v1
-kind: CareerMilestone
-metadata:
-  name: junior-devops-engineer
-  company: "Synnefo Solutions"
-  period: "2024-2025"
-spec:
-  role: "Junior DevOps Engineer"
-  containerization: "Docker"
-  continuousIntegration: "Jenkins Pipelines"
-  monitoringStack: "Prometheus & Grafana"
-  achievements:
-    - "Migrated legacy bare-metal to Docker pods"
-    - "Automated infrastructure monitoring alerts"
-    - "Optimized build pipelines, reducing latency"`
+        tools: ['Docker', 'Jenkins', 'Prometheus', 'Grafana'],
     },
     {
         title: 'Senior DevOps & Cloud Architect',
         company: 'Synnefo Solutions, Ernakulam',
         period: '2025 — Present',
         status: 'Architecting',
-        efficiency: '98',
-        focusAreas: [
-            { name: 'Infrastruct as Code', val: 95 },
-            { name: 'Kubernetes/EKS', val: 90 },
-            { name: 'Team Mentorship', val: 85 }
+        description: 'Running AWS architecture across more than 20 accounts, and teaching the next engineers how.',
+        achievements: [
+            'Directing AWS architecture across 20+ accounts',
+            'Running a 99.99% uptime production cluster',
+            'Mentored 700+ engineers in cloud technologies',
         ],
-        bento1: { label: 'Architecture', val: 'Multi-Region' },
-        bento2: { label: 'Key Challenge', val: 'Resilience' },
-        description: 'Directing AWS architecture across 20+ accounts and orchestrating a 99.99% uptime production cluster. Mentored over 700 engineers.',
-        yaml: `apiVersion: sreejith.devops/v1
-kind: CareerMilestone
-metadata:
-  name: senior-devops-engineer
-  company: "Synnefo Solutions"
-  period: "2025-Present"
-spec:
-  role: "Senior DevOps & Cloud Architect"
-  architecture: "AWS Multi-Region / EKS"
-  infrastructureAsCode: "Terraform"
-  pipelineEngine: "GitHub Actions & ArgoCD"
-  achievements:
-    - "Directing AWS architecture across 20+ accounts"
-    - "Orchestrated 99.99% uptime production cluster"
-    - "Mentored 700+ engineers in cloud technologies"`
-    }
+        tools: ['AWS Multi-Region', 'EKS', 'Terraform', 'GitHub Actions', 'ArgoCD'],
+    },
 ];
 
-const topoNodes = document.querySelectorAll('.html-topo-node');
-const mobileNavBtns = document.querySelectorAll('.mobile-nav-btn');
-let yamlTypingInterval = null;
-
-function highlightYAML(line) {
-    let escaped = line
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-
-    if (escaped.trim().startsWith('#')) {
-        return `<span class="yaml-comment">${escaped}</span>`;
-    }
-
-    escaped = escaped.replace(/^([ \t]*)([^#:\n]+)(:)/g, (match, indent, key, colon) => {
-        return `${indent}<span class="yaml-key">${key}</span>${colon}`;
-    });
-
-    escaped = escaped.replace(/(:\s+)([^#\n]+)/g, (match, colon, val) => {
-        const trimmedVal = val.trim();
-        if (trimmedVal.startsWith('"') && trimmedVal.endsWith('"')) {
-            return `${colon}<span class="yaml-val">${val}</span>`;
-        }
-        if (trimmedVal.startsWith('[') && trimmedVal.endsWith(']')) {
-            return `${colon}<span class="yaml-arr">${val}</span>`;
-        }
-        if (trimmedVal === 'true' || trimmedVal === 'false' || !isNaN(trimmedVal)) {
-            return `${colon}<span class="yaml-class">${val}</span>`;
-        }
-        return `${colon}<span class="yaml-val">${val}</span>`;
-    });
-
-    escaped = escaped.replace(/^([ \t]*-\s+)([^#\n]+)/g, (match, hyphen, val) => {
-        return `${hyphen}<span class="yaml-arr">${val}</span>`;
-    });
-
-    if (escaped.includes('CareerMilestone')) {
-        escaped = escaped.replace('CareerMilestone', '<span class="yaml-class">CareerMilestone</span>');
-    }
-
-    return escaped;
-}
-
-function typeYAML(yamlText) {
-    const codeContainer = document.getElementById('yaml-manifest-code');
-    if (!codeContainer) return;
-
-    if (yamlTypingInterval) clearInterval(yamlTypingInterval);
-    codeContainer.innerHTML = '';
-    codeContainer.classList.add('yaml-typing');
-
-    const lines = yamlText.split('\n');
-    let lineIdx = 0;
-
-    yamlTypingInterval = setInterval(() => {
-        if (lineIdx < lines.length) {
-            const highlighted = highlightYAML(lines[lineIdx]);
-            const div = document.createElement('div');
-            div.innerHTML = highlighted;
-            codeContainer.appendChild(div);
-
-            const body = codeContainer.closest('.code-body');
-            if (body) body.scrollTop = body.scrollHeight;
-
-            lineIdx++;
-        } else {
-            clearInterval(yamlTypingInterval);
-            codeContainer.classList.remove('yaml-typing');
-        }
-    }, 25);
+// A sideways swipe on a touch screen: dir is +1 for next (swiped left), −1 for previous.
+// Vertical swipes are left alone, so the page still scrolls
+function onSwipe(el, fn) {
+    let start = null;
+    el.addEventListener('touchstart', e => { start = e.touches[0]; }, { passive: true });
+    el.addEventListener('touchend', e => {
+        if (!start) return;
+        const t = e.changedTouches[0];
+        const dx = t.clientX - start.clientX, dy = t.clientY - start.clientY;
+        start = null;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) fn(dx < 0 ? 1 : -1);
+    }, { passive: true });
 }
 
 // Count a number up from zero on the shared spring curve
@@ -514,235 +434,146 @@ function countUp(el, target, ms, format = n => n) {
     })(t0);
 }
 
-function setText(id, text) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = text;
+// The path: five identical curves end to end, so each role sits at an equal fraction of its length
+const flightTrack = document.querySelector('.flight-track');
+const FLIGHT_POINTS = MILESTONE_DATA.map((_, i) => [70 + i * 215, 132 - i * 26]);
+const flightD = FLIGHT_POINTS.map(([x, y], i) => {
+    if (i === 0) return `M${x} ${y}`;
+    const [px, py] = FLIGHT_POINTS[i - 1];
+    return `C${px + 100} ${py} ${x - 100} ${y} ${x} ${y}`;
+}).join(' ');
+const flightBase = document.querySelector('.flight-path-base');
+const flightLit = document.querySelector('.flight-path-lit');
+const flightCraft = document.querySelector('.flight-craft');
+const flightStops = document.querySelector('.flight-stops');
+const flightDetail = document.getElementById('flight-detail');
+let activeMilestone = -1;
+
+function renderMilestone(data) {
+    const q = sel => flightDetail.querySelector(sel);
+    q('.flight-status').textContent = data.status;
+    q('.flight-title').textContent = data.title;
+    q('.flight-meta').textContent = `${data.company} · ${data.period}`;
+    q('.flight-description').textContent = data.description;
+    q('.flight-achievements').replaceChildren(...data.achievements.map(text => {
+        const li = document.createElement('li');
+        li.textContent = text;
+        return li;
+    }));
+    q('.flight-tools').textContent = data.tools.join(' · ');
 }
 
-function updateTelemetry(milestone) {
+const flightCount = document.querySelector('.flight-count');
+const flightPrev = document.querySelector('.flight-prev');
+const flightNext = document.querySelector('.flight-next');
+const lastMilestone = MILESTONE_DATA.length - 1;
+const craft = { frac: 0 };
+
+function selectMilestone(milestone, { instant = false } = {}) {
+    milestone = Math.min(Math.max(milestone, 0), lastMilestone);
+    if (milestone === activeMilestone) return;
+    const first = activeMilestone === -1;
+    activeMilestone = milestone;
+    [...flightStops.children].forEach((stop, i) => {
+        stop.classList.toggle('active', i === milestone);
+        stop.classList.toggle('passed', i < milestone);
+        stop.setAttribute('aria-selected', String(i === milestone));
+        stop.tabIndex = i === milestone ? 0 : -1;
+    });
+    flightCount.textContent = `${String(milestone + 1).padStart(2, '0')} / ${String(lastMilestone + 1).padStart(2, '0')}`;
+    flightPrev.disabled = milestone === 0;
+    flightNext.disabled = milestone === lastMilestone;
+
+    // The craft flies along the path to the role, on the shared spring
+    const frac = milestone / lastMilestone;
+    if (instant || reducedMotion) {
+        gsap.killTweensOf(craft);
+        craft.frac = frac;
+        placeCraft(frac);
+    } else {
+        gsap.to(craft, { frac, duration: MOTION.enter, ease: MOTION.ease, overwrite: true, onUpdate: () => placeCraft(craft.frac) });
+    }
+
     const data = MILESTONE_DATA[milestone];
-    if (!data) return;
-
-    const applyData = () => {
-        setText('inspector-title', data.title);
-        setText('inspector-company', data.company);
-        setText('inspector-period', data.period);
-        setText('inspector-description', data.description);
-        setText('inspector-status', data.status);
-
-        // Gauge ring
-        const gaugeFill = document.getElementById('sla-gauge-fill');
-        const percentageText = document.getElementById('sla-percentage');
-        if (percentageText) countUp(percentageText, parseInt(data.efficiency, 10), MOTION.enter * 1000, n => `${n}%`);
-        if (gaugeFill) {
-            const circumference = 213.6;
-            const offset = circumference * (1 - parseFloat(data.efficiency) / 100);
-            gaugeFill.style.strokeDashoffset = offset;
-        }
-
-        // Focus Area sliders
-        data.focusAreas.forEach((area, idx) => {
-            const sliderName = document.getElementById(`comp-name-${idx}`);
-            const sliderVal = document.getElementById(`comp-val-${idx}`);
-            const sliderFill = document.getElementById(`comp-fill-${idx}`);
-            if (sliderName) sliderName.textContent = area.name;
-            if (sliderVal) countUp(sliderVal, area.val, MOTION.enter * 1000, n => `${n}%`);
-            if (sliderFill) {
-                sliderFill.style.width = '0%';
-                setTimeout(() => {
-                    sliderFill.style.width = `${area.val}%`;
-                }, 50);
-            }
-        });
-
-        // Bento stats
-        setText('bento-label-1', data.bento1.label);
-        setText('metric-bento-scale', data.bento1.val);
-        setText('bento-label-2', data.bento2.label);
-        setText('metric-bento-highlight', data.bento2.val);
-
-        // Run YAML type stream
-        typeYAML(data.yaml);
-    };
-
+    if (first || instant || reducedMotion) return renderMilestone(data);
     // Content cross-fades in place: out softly, swap, back in with the shared rise
-    const blocks = ['.inspector-header', '.inspector-metrics', '.telemetry-panel .code-window'];
+    const parts = flightDetail.children;
     gsap.timeline()
-        .to(blocks, { opacity: 0, y: -8, duration: MOTION.exit / 2, ease: MOTION.ease, stagger: 0.03, overwrite: true, onComplete: applyData })
-        .to(blocks, { opacity: 1, y: 0, duration: MOTION.update, ease: MOTION.ease, stagger: MOTION.stagger });
+        .to(parts, { autoAlpha: 0, y: -8, duration: MOTION.exit / 3, ease: MOTION.ease, stagger: 0.02, overwrite: true, onComplete: () => renderMilestone(data) })
+        .to(parts, { autoAlpha: 1, y: 0, duration: MOTION.update, ease: MOTION.ease, stagger: MOTION.stagger });
 }
 
-function selectMilestone(milestone) {
-    // Sync topo SVG nodes
-    topoNodes.forEach(node => {
-        const currentMilestone = parseInt(node.dataset.milestone, 10);
-        node.classList.toggle('active', currentMilestone === milestone);
-    });
-
-    // Sync mobile navigation backup pills
-    mobileNavBtns.forEach(btn => {
-        const currentMilestone = parseInt(btn.dataset.milestone, 10);
-        btn.classList.toggle('active', currentMilestone === milestone);
-        btn.setAttribute('aria-selected', currentMilestone === milestone ? 'true' : 'false');
-    });
-
-    // Load Telemetry Dashboard elements
-    updateTelemetry(milestone);
+// Where the craft is along the path (0 → 1), lit up to there. It moves with a transform (no
+// layout); the path's box is measured only when it changes size
+let flightLength = 0, flightW = 0, flightH = 0;
+const flightBox = document.querySelector('.flight');
+if (flightBox) {
+    new ResizeObserver(([entry]) => {
+        flightW = entry.contentRect.width;
+        flightH = entry.contentRect.height;
+        placeCraft(craft.frac);
+    }).observe(flightBox);
 }
-
-// Topology nodes and their mobile tab equivalents select a milestone
-[...topoNodes, ...mobileNavBtns].forEach(el => {
-    el.addEventListener('click', () => selectMilestone(parseInt(el.dataset.milestone, 10)));
-});
-
-// Attach Copy Spec listener
-const copyBtn = document.getElementById('yaml-copy-btn');
-if (copyBtn) {
-    copyBtn.addEventListener('click', () => {
-        const activeNode = document.querySelector('.html-topo-node.active');
-        const milestone = activeNode ? parseInt(activeNode.dataset.milestone, 10) : 4;
-        const rawYAML = MILESTONE_DATA[milestone].yaml;
-
-        navigator.clipboard.writeText(rawYAML).then(() => {
-            copyBtn.classList.add('active');
-            copyBtn.querySelector('.copy-text').textContent = 'Copied';
-            setTimeout(() => {
-                copyBtn.classList.remove('active');
-                copyBtn.querySelector('.copy-text').textContent = 'Copy';
-            }, 2000);
-        }).catch(err => {
-            console.error('Failed to copy: ', err);
-        });
-    });
-}
-
-// Initialise experience dashboard (Default to Senior role - milestone 4)
-if (topoNodes.length > 0) {
-    selectMilestone(4);
-}
-
-// ─── Contact Form ───
-const contactForm = document.getElementById('contact-form');
-const contactTerminal = document.getElementById('contact-terminal-output');
-const submitBtn = document.getElementById('submit-btn');
-
-function validateField(input, errorEl) {
-    if (!input.value.trim()) {
-        input.classList.add('invalid');
-        errorEl.textContent = 'This field is required.';
-        return false;
+function placeCraft(frac) {
+    if (!flightLength) return;
+    const p = flightBase.getPointAtLength(frac * flightLength);
+    flightCraft.style.transform = `translate3d(${((p.x / 1000) * flightW).toFixed(1)}px, ${((p.y / 160) * flightH).toFixed(1)}px, 0)`;
+    // The lit stretch is traced point by point (a dash would be measured in the stretched
+    // drawing's units and stop short)
+    const n = Math.ceil(frac * 120);
+    const pts = [];
+    for (let k = 0; k <= n; k++) {
+        const q = flightBase.getPointAtLength((k / Math.max(n, 1)) * frac * flightLength);
+        pts.push(`${q.x.toFixed(1)} ${q.y.toFixed(1)}`);
     }
-    if (input.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value)) {
-        input.classList.add('invalid');
-        errorEl.textContent = 'Please enter a valid email.';
-        return false;
-    }
-    input.classList.remove('invalid');
-    errorEl.textContent = '';
-    return true;
+    flightLit.setAttribute('d', frac > 0 ? `M${pts.join('L')}` : '');
 }
 
-function escapeHtml(str) {
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+// When the page arrives, the whole career is flown once: from 2018 to now, in a couple of seconds
+let flownIn = false;
+function flyIn() {
+    if (flownIn || reducedMotion) return;
+    flownIn = true;
+    craft.frac = 0;
+    placeCraft(0);
+    gsap.to(craft, { frac: 1, duration: 2.4, ease: 'power2.inOut', delay: 0.3, overwrite: true, onUpdate: () => placeCraft(craft.frac) });
 }
 
-function typeContactTerminal(lines) {
-    if (!contactTerminal) return;
-    contactTerminal.innerHTML = '';
+if (flightTrack && flightStops) {
+    flightBase.setAttribute('d', flightD);
+    flightLength = flightBase.getTotalLength();
 
-    lines.forEach((line, i) => {
-        setTimeout(() => {
-            const lineEl = document.createElement('div');
-            lineEl.className = 'terminal-line';
-
-            if (line.type === 'cmd') {
-                lineEl.innerHTML = `<span class="prompt">$</span> <span class="cmd">${escapeHtml(line.text)}</span>`;
-            } else {
-                lineEl.innerHTML = `<span class="${line.type}">${escapeHtml(line.text)}</span>`;
-            }
-
-            contactTerminal.appendChild(lineEl);
-            contactTerminal.scrollTop = contactTerminal.scrollHeight;
-
-            // On the final line, add a blinking cursor and reset the button
-            if (i === lines.length - 1) {
-                const cursorLine = document.createElement('div');
-                cursorLine.className = 'terminal-line terminal-cursor-blink';
-                cursorLine.innerHTML = '<span class="prompt">$</span> ';
-                contactTerminal.appendChild(cursorLine);
-
-                // Reset button after success animation
-                if (submitBtn) {
-                    setTimeout(() => {
-                        submitBtn.classList.remove('loading', 'success');
-                        submitBtn.querySelector('.btn-text').textContent = 'Send message';
-                    }, 3000);
-                }
-            }
-        }, 80 + i * 100);
-    });
-}
-
-if (contactForm && submitBtn) {
-    // Clear validation on input
-    contactForm.querySelectorAll('input, textarea').forEach(input => {
-        input.addEventListener('input', () => {
-            input.classList.remove('invalid');
-            const errorEl = input.parentElement.querySelector('.field-error');
-            if (errorEl) errorEl.textContent = '';
+    MILESTONE_DATA.forEach((data, i) => {
+        const [x, y] = FLIGHT_POINTS[i];
+        const stop = document.createElement('button');
+        stop.type = 'button';
+        stop.className = 'flight-stop';
+        stop.style.left = `${x / 10}%`;
+        stop.style.top = `${(y / 160) * 100}%`;
+        stop.setAttribute('role', 'tab');
+        stop.setAttribute('aria-controls', 'flight-detail');
+        stop.innerHTML = '<span class="flight-stop-year"></span><span class="flight-stop-role"></span>';
+        stop.children[0].textContent = data.period.slice(0, 4);
+        stop.children[1].textContent = data.title;
+        stop.addEventListener('click', () => selectMilestone(i));
+        stop.addEventListener('keydown', e => {
+            const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+            if (!step) return;
+            e.preventDefault();
+            selectMilestone(activeMilestone + step);
+            flightStops.children[activeMilestone].focus({ preventScroll: true });
         });
+        flightStops.appendChild(stop);
     });
+    flightPrev.addEventListener('click', () => selectMilestone(activeMilestone - 1));
+    flightNext.addEventListener('click', () => selectMilestone(activeMilestone + 1));
 
-    contactForm.addEventListener('submit', (e) => {
-        e.preventDefault();
+    // Phones: swipe the role sideways to move along the path (vertical swipes still scroll)
+    onSwipe(flightDetail, dir => selectMilestone(activeMilestone + dir));
 
-        const nameInput = document.getElementById('contact-name');
-        const emailInput = document.getElementById('contact-email');
-        const msgInput = document.getElementById('contact-message');
-        const nameError = document.getElementById('name-error');
-        const emailError = document.getElementById('email-error');
-        const msgError = document.getElementById('message-error');
-
-        const isNameValid = validateField(nameInput, nameError);
-        const isEmailValid = validateField(emailInput, emailError);
-        const isMsgValid = validateField(msgInput, msgError);
-
-        if (!isNameValid || !isEmailValid || !isMsgValid) return;
-
-        // Start "deploying" animation
-        submitBtn.classList.add('loading');
-
-        const name = nameInput.value.trim();
-        const email = emailInput.value.trim();
-
-        typeContactTerminal([
-            { type: 'cmd', text: 'kubectl apply -f message-payload.yaml' },
-            { type: 'output', text: `Packaging payload from ${name} <${email}>...` },
-            { type: 'output', text: 'Validating SMTP route configuration...' },
-            { type: 'success', text: '[ ok ] route validated: smtp-gateway.sreejith.cloud' },
-            { type: 'output', text: 'Provisioning message container...' },
-            { type: 'success', text: '[ ok ] container deployed: msg-relay-pod-7x3k2' },
-            { type: 'output', text: 'Encrypting payload with TLS 1.3...' },
-            { type: 'success', text: '[ ok ] payload encrypted and sealed' },
-            { type: 'output', text: 'Deploying to message queue...' },
-            { type: 'success', text: '[ ok ] message deployed' },
-            { type: 'output', text: '' },
-            { type: 'info', text: 'Thank you. I\'ll reply within 24 hours.' },
-        ]);
-
-        // Show success on button
-        setTimeout(() => {
-            submitBtn.classList.remove('loading');
-            submitBtn.classList.add('success');
-            submitBtn.querySelector('.btn-text').textContent = 'Sent';
-            contactForm.reset();
-        }, 1400);
-    });
+    // Opens on the current role, the path drawn all the way
+    selectMilestone(lastMilestone, { instant: true });
+    if (!reducedMotion) placeCraft(0);   // until the page arrives and flies it in
 }
 
 // ─── Skills Section ───────────────────────────────────────────────────────────
@@ -774,21 +605,168 @@ const SKILLS_DATA = [
     }
 ];
 
+// The role in which each skill first came in (index into MILESTONE_DATA), from the tools named
+// in each role's manifest above. Skills not listed here show only their category.
+const SKILL_FIRST_ROLE = {
+    'Cisco': 0, 'MikroTik': 0, 'VLAN': 0, 'VPN': 0, 'BGP': 0, 'OSPF': 0, 'pfSense': 0,
+    'RHEL': 1, 'CentOS': 1, 'Ubuntu': 1, 'SELinux': 1, 'iptables': 1, 'Bash': 1, 'Shell Script': 1, 'Ansible': 1,
+    'AWS EC2': 2, 'AWS VPC': 2, 'AWS RDS': 2, 'Route 53': 2,
+    'Docker': 3, 'Jenkins': 3, 'Prometheus': 3, 'Grafana': 3,
+    'Kubernetes': 4, 'EKS': 4, 'Terraform': 4, 'GitHub Actions': 4, 'ArgoCD': 4,
+};
+
+// Skills are stars: pointing at one (or tapping it) shows its catalogue entry, and every skill
+// picked up in the same role lights up with it
 function renderSkills() {
     const grid = document.getElementById('skills-grid');
+    const readout = document.getElementById('skill-readout');
     if (!grid) return;
 
-    SKILLS_DATA.forEach(group => {
-        const groupEl = document.createElement('div');
-        groupEl.className = 'card skill-group';
+    // Each category is a constellation: its stars zigzag down the chart, joined by faint lines,
+    // each named to its right. A star's size is its magnitude: how long the skill has been in use
+    const thisYear = new Date().getFullYear();
+    const yearsOf = skill => skill in SKILL_FIRST_ROLE
+        ? thisYear - parseInt(MILESTONE_DATA[SKILL_FIRST_ROLE[skill]].period, 10)
+        : null;
+    const rand = (() => { let seed = 11; return () => ((seed = (seed * 16807) % 2147483647) / 2147483647); })();
+    const stars = [];
+    SKILLS_DATA.forEach((group, g) => {
+        const constellation = document.createElement('div');
+        constellation.className = 'constellation';
+        const label = document.createElement('p');
+        label.className = 'constellation-name';
+        label.innerHTML = '<span class="cat-id"></span><span></span>';
+        label.children[0].textContent = `C${g + 1}`;
+        label.children[1].textContent = group.category;
 
-        groupEl.innerHTML = `
-            <p class="card-label">${group.category}</p>
-            <div class="tag-list">
-                ${group.skills.map(s => `<span class="tag">${s}</span>`).join('')}
-            </div>
-        `;
-        grid.appendChild(groupEl);
+        const chart = document.createElement('div');
+        chart.className = 'constellation-chart';
+        chart.style.setProperty('--rows', group.skills.length);
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 100 100');
+        svg.setAttribute('preserveAspectRatio', 'none');
+        svg.setAttribute('aria-hidden', 'true');
+        const n = group.skills.length;
+        const points = group.skills.map((_, i) => [4 + (i % 2 ? 8 : 0) + rand() * 5, ((i + 0.5) / n) * 100]);
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+        line.setAttribute('points', points.map(p => p.join(',')).join(' '));
+        svg.appendChild(line);
+        chart.appendChild(svg);
+
+        group.skills.forEach((skill, i) => {
+            const star = document.createElement('button');
+            star.type = 'button';
+            star.className = 'skill-star';
+            star.style.left = `${points[i][0]}%`;
+            star.style.top = `${points[i][1]}%`;
+            const years = yearsOf(skill);
+            star.dataset.mag = years === null ? 0 : years >= 6 ? 3 : years >= 3 ? 2 : 1;
+            star.textContent = skill;
+            star.dataset.id = `MW·03-${g + 1}${String(i + 1).padStart(2, '0')}`;
+            star.dataset.category = group.category;
+            if (skill in SKILL_FIRST_ROLE) star.dataset.role = SKILL_FIRST_ROLE[skill];
+            chart.appendChild(star);
+            stars.push(star);
+        });
+        constellation.append(label, chart);
+        grid.appendChild(constellation);
+    });
+
+    // Phones show one constellation at a time: a chip per category, or a sideways swipe
+    const constellations = [...grid.children];
+    const tabs = document.createElement('div');
+    tabs.className = 'sky-tabs';
+    tabs.setAttribute('role', 'tablist');
+    tabs.setAttribute('aria-label', 'Skill categories');
+    let shownGroup = 0;
+    const showGroup = g => {
+        shownGroup = (g + constellations.length) % constellations.length;
+        constellations.forEach((c, i) => c.classList.toggle('is-shown', i === shownGroup));
+        [...tabs.children].forEach((t, i) => {
+            t.classList.toggle('active', i === shownGroup);
+            t.setAttribute('aria-selected', String(i === shownGroup));
+        });
+        tabs.children[shownGroup].scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    };
+    SKILLS_DATA.forEach((group, g) => {
+        const tab = document.createElement('button');
+        tab.type = 'button';
+        tab.className = 'chip chip--small';
+        tab.setAttribute('role', 'tab');
+        tab.textContent = group.category;
+        tab.addEventListener('click', () => showGroup(g));
+        tabs.appendChild(tab);
+    });
+    grid.before(tabs);
+    showGroup(0);
+    onSwipe(grid, dir => showGroup(shownGroup + dir));
+
+    if (!readout) return;
+    const empty = readout.firstElementChild;
+    let pinned = null;
+    let shown = null;
+
+    const show = star => {
+        if (star === shown) return;
+        shown = star;
+        stars.forEach(s => {
+            s.classList.toggle('is-lit', s === star || (star?.dataset.role !== undefined && s.dataset.role === star.dataset.role));
+            s.classList.toggle('is-current', s === star);
+        });
+        grid.classList.toggle('has-lit', !!star);
+        if (!star) {
+            readout.classList.remove('is-filled');
+            readout.replaceChildren(empty);
+            return;
+        }
+        readout.classList.add('is-filled');
+        readout.replaceChildren();
+        const head = document.createElement('p');
+        head.className = 'skill-readout-head';
+        head.innerHTML = `<span class="cat-id"></span><span class="skill-readout-name"></span><span class="skill-readout-cat"></span>`;
+        head.children[0].textContent = star.dataset.id;
+        head.children[1].textContent = star.textContent;
+        head.children[2].textContent = star.dataset.category;
+        readout.appendChild(head);
+
+        const body = document.createElement('p');
+        body.className = 'skill-readout-body';
+        const role = MILESTONE_DATA[star.dataset.role];
+        if (role) {
+            const since = parseInt(role.period, 10);
+            const years = Math.max(1, thisYear - since);
+            const lit = stars.filter(s => s.dataset.role === star.dataset.role).length;
+            body.append(`In use since ${since}, about ${years} year${years === 1 ? '' : 's'}. First picked up as `);
+            const link = document.createElement('button');
+            link.type = 'button';
+            link.className = 'skill-readout-role';
+            link.textContent = role.title;
+            link.addEventListener('click', () => {
+                selectMilestone(Number(star.dataset.role));
+                scrollToSection('#experience');
+            });
+            body.append(link, ` at ${role.company.split(',')[0]}, along with ${lit - 1} other skill${lit === 2 ? '' : 's'} lit up here.`);
+        } else {
+            body.textContent = `Part of my ${star.dataset.category.toLowerCase()} toolkit.`;
+        }
+        readout.appendChild(body);
+    };
+
+    const hoverable = window.matchMedia('(hover: hover)').matches;
+    stars.forEach(star => {
+        if (hoverable) {
+            star.addEventListener('pointerenter', () => show(star));
+            star.addEventListener('pointerleave', () => show(pinned));
+        }
+        star.addEventListener('focus', () => show(star));
+        // (not when focus moves into the entry itself, to its role link)
+        star.addEventListener('blur', e => { if (!readout.contains(e.relatedTarget)) show(pinned); });
+        star.addEventListener('click', () => {
+            pinned = pinned === star ? null : star;
+            star.setAttribute('aria-pressed', String(pinned === star));
+            stars.forEach(s => s !== star && s.removeAttribute('aria-pressed'));
+            show(pinned ?? (hoverable ? star : null));
+        });
     });
 }
 
@@ -808,17 +786,101 @@ if (stats) {
 }
 
 // ─── Scroll choreography: hero → world, page transitions, camera stations ───
-initTransitions({
+({ lenis } = initTransitions({
     world,
     particles,
     reducedMotion,
     onStation,
     onReveal: el => {
+        if (el.matches('.flight')) flyIn();
         el.querySelectorAll('[data-reveal]').forEach(revealHeading);
         (el.matches(LINE_TEXT) ? [el] : [...el.querySelectorAll(LINE_TEXT)]).forEach(revealLines);
     },
     onOpenStretch,
+}));
+
+// ─── Work: one case at a time; the three headline numbers are the switch ───
+const caseList = document.querySelector('.case-studies');
+if (caseList) {
+    const cases = [...caseList.querySelectorAll('.case-study')];
+    const tabs = document.createElement('div');
+    tabs.className = 'case-tabs';
+    tabs.setAttribute('role', 'tablist');
+    tabs.setAttribute('aria-label', 'Case studies');
+    let shown = -1;
+    const showCase = (i, instant = false) => {
+        i = (i + cases.length) % cases.length;
+        if (i === shown) return;
+        const prev = cases[shown];
+        shown = i;
+        [...tabs.children].forEach((t, k) => {
+            t.classList.toggle('active', k === i);
+            t.setAttribute('aria-selected', String(k === i));
+            t.tabIndex = k === i ? 0 : -1;
+        });
+        const swap = () => cases.forEach((c, k) => { c.hidden = k !== i; });
+        if (instant || reducedMotion || !prev) return swap();
+        gsap.timeline()
+            .to(prev, { autoAlpha: 0, y: -8, duration: MOTION.exit / 3, ease: MOTION.ease, overwrite: true, onComplete: swap })
+            .fromTo(cases[i], { autoAlpha: 0, y: MOTION.rise }, { autoAlpha: 1, y: 0, duration: MOTION.update, ease: MOTION.ease });
+    };
+    cases.forEach((c, i) => {
+        c.id = `case-${i + 1}`;
+        c.setAttribute('role', 'tabpanel');
+        const tab = document.createElement('button');
+        tab.type = 'button';
+        tab.className = 'case-tab';
+        tab.setAttribute('role', 'tab');
+        tab.setAttribute('aria-controls', c.id);
+        tab.innerHTML = '<span class="case-tab-value"></span><span class="case-tab-label"></span>';
+        tab.children[0].textContent = c.querySelector('.case-metric-value').textContent;
+        tab.children[1].textContent = c.querySelector('h3').textContent;
+        tab.addEventListener('click', () => showCase(i));
+        tab.addEventListener('keydown', e => {
+            const step = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+            if (!step) return;
+            e.preventDefault();
+            showCase(shown + step);
+            tabs.children[shown].focus();
+        });
+        tabs.appendChild(tab);
+    });
+    caseList.before(tabs);
+    showCase(0, true);
+    onSwipe(caseList, dir => showCase(shown + dir));
+}
+
+// ─── Skills orbit; contact chips can be thrown into the hole ───
+const skyChart = document.getElementById('skills-grid');
+if (skyChart && !reducedMotion) createOrbits(skyChart);
+throwables = reducedMotion ? null : createThrowables([...document.querySelectorAll('#portal-contact .social-link')], {
+    onEaten: (x, y) => waves.emit(x, y, 1.4),
 });
+
+// ─── Gravitational waves: from every click in the Galaxy, and a merger to escape ───
+document.addEventListener('click', e => {
+    if (!header.classList.contains('is-world') || e.defaultPrevented) return;
+    if (e.target.closest?.('input, textarea, dialog, .finale-escape')) return;
+    waves.emit(e.clientX, e.clientY);
+});
+document.querySelector('.finale-escape')?.addEventListener('click', e => {
+    const box = e.currentTarget.getBoundingClientRect();
+    waves.merger(box.left + box.width / 2, box.top + box.height / 2);
+});
+
+// ─── Terminal (press ~) ───
+const terminal = createTerminal({
+    milestones: MILESTONE_DATA,
+    skills: SKILLS_DATA,
+    sections: sectionIds.slice(1).map(id => ({ id, dir: id === 'portal-contact' ? 'contact' : id })),
+    onNavigate: scrollToSection,
+    ambient: window.AudioContext ? {
+        get on() { return ambient.on; },
+        setOn(v) { ambient.setOn(v); syncSound(); },
+    } : null,
+    lenis,
+});
+document.getElementById('terminal-open')?.addEventListener('click', () => terminal.open());
 
 // Split headings up front so the first reveal doesn't reflow
 document.querySelectorAll('[data-reveal]').forEach(splitWords);

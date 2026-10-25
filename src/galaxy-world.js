@@ -62,6 +62,7 @@ import {
   Timer,
   Vector2,
   Vector3,
+  Vector4,
   WebGLRenderTarget,
   WebGLRenderer,
 } from 'three';
@@ -75,13 +76,13 @@ const ASSETS = `${import.meta.env.BASE_URL}galaxy/`;
 // ─── Measured numbers ────────────────────────────────────────────────────────
 const KPC_M = 3.0857e19;
 export const RS_KPC = (2 * 6.674e-11 * 4.3e6 * 1.989e30 / (2.998e8 ** 2)) / KPC_M;   // Sgr A* Schwarzschild radius
-const MAP_KPC = 40.2;                    // width of the face-on map
-const MAP_CENTRE = [0.4994, 0.4990];     // Sgr A* on the map (u right, v down)
+export const MAP_KPC = 40.2;                    // width of the face-on map
+export const MAP_CENTRE = [0.4994, 0.4990];     // Sgr A* on the map (u right, v down)
 const SUN = new Vector3(8.178, 0.0208, 0);
 const BAR_ANGLE = MathUtils.degToRad(27);   // Bland-Hawthorn & Gerhard 2016: 27° ± 2°
 
 // Camera stations: position and look target (kpc), field of view, exposure
-const STATIONS = [
+export const STATIONS = [
   { pos: [14, 15, 22],           target: [0, 0, 0],         fov: 42, exposure: 1.0 },  // 0 arrival: the whole Milky Way
   { pos: SUN.toArray(),          target: [0, 0.4, -0.9],    fov: 62, exposure: 1.0 },  // 1 the Sun: the real sky
   { pos: [12.5, 7.0, 6.0],       target: [2.5, 0, -1.5],    fov: 42, exposure: 1.0 },  // 2 above the Sun's neighbourhood
@@ -363,6 +364,11 @@ const FinalShader = {
     uniform vec3 uDiskAxis;    // the disk's spin axis
     uniform float uTime;       // coordinate time in units of rs / c
     uniform vec2 uProjScale;   // projection matrix [0][0], [1][1]
+    uniform float uAspect;     // width / height
+    uniform float uMargin;     // how much wider than the screen the scene was rendered (tan ratio)
+    uniform vec3 uCursor;      // the pointer as a lens: xy in uv, z its Einstein radius (screen heights)
+    uniform float uBeta;       // the camera's speed as a fraction of c; + forward, − back
+    uniform vec4 uRipples[4];  // gravitational waves: xy origin (uv), z age (s), w strain amplitude
     varying vec2 vUv;
 
     #ifndef BH_STEPS
@@ -374,7 +380,8 @@ const FinalShader = {
 
     // View-space direction through a screen point, and back (perspective, no depth needed)
     vec3 viewDir(vec2 uv) { return normalize(vec3((uv * 2.0 - 1.0) / uProjScale, -1.0)); }
-    vec2 toUv(vec3 d) { return (d.xy / -d.z) * uProjScale * 0.5 + 0.5; }
+    // The scene may be rendered wider than the screen shows (uMargin ≥ 1, see aberration)
+    vec2 toUv(vec3 d) { return (d.xy / -d.z) * (uProjScale / uMargin) * 0.5 + 0.5; }
     float hash12(vec2 p) { vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
     float hash13(vec3 p) { p = fract(p * 0.1031); p += dot(p, p.zyx + 31.32); return fract((p.x + p.y) * p.z); }
     float noise(vec3 p) {
@@ -475,8 +482,70 @@ const FinalShader = {
       return col + trans * sceneAt(normalize(v));
     }
 
+    // Mirror coordinates that fall outside the frame back into it
+    vec2 fold(vec2 uv) { return 1.0 - abs(1.0 - mod(uv, 2.0)); }
+
+    // Gravitational waves: a ring expanding at the speed of light (scaled to the screen), carrying
+    // a plus-polarised strain h — space stretches along x while it squeezes along y, then the
+    // other way — so every point moves by ½·h·(x, −y) from the source. Each wave fades as it spreads
+    vec2 gravitationalWaves(vec2 uv) {
+      vec2 off = vec2(0.0);
+      for (int i = 0; i < 4; i++) {
+        vec4 w = uRipples[i];
+        if (w.w <= 0.0) continue;
+        vec2 q = (uv - w.xy) * vec2(uAspect, 1.0);
+        float x = length(q) - w.z * 0.85;                    // distance behind the wavefront
+        float h = w.w * exp(-x * x / 0.01) * sin(x * 70.0) * exp(-w.z * 0.8);
+        off += 0.5 * h * vec2(q.x, -q.y) / vec2(uAspect, 1.0);
+      }
+      return off;
+    }
+
+    // The pointer as a point mass: the lens equation β = θ − θE²/θ. Each pixel shows the light
+    // from where the lens bent it from, so the stars around the cursor are pushed out into arcs
+    // and brightened by the magnification μ = 1 / (1 − (θE/θ)⁴), most of all on the Einstein ring.
+    // (Inside the ring, the faint inverted second image is left out: the middle stays dark.)
+    vec2 cursorLens(vec2 uv, out float gain) {
+      gain = 1.0;
+      if (uCursor.z <= 0.0) return uv;
+      vec2 q = (uv - uCursor.xy) * vec2(uAspect, 1.0);
+      float r = max(length(q) / uCursor.z, 1e-3);           // in Einstein radii
+      float r4 = r * r * r * r;
+      gain = min(1.0 / abs(1.0 - 1.0 / r4), 2.2);
+      if (r < 1.0) gain *= smoothstep(0.55, 1.0, r);
+      vec2 b = q * (1.0 - 1.0 / (r * r));
+      return uCursor.xy + b / vec2(uAspect, 1.0);
+    }
+
+    // Moving at speed β, light arrives from further forward (aberration):
+    // cos θ_rest = (cos θ − β) / (1 − β cos θ). The scene was rendered at rest, so each pixel
+    // looks up where its light came from in that frame
+    vec3 aberrate(vec3 d, float beta) {
+      float c = -d.z;
+      float cr = (c - beta) / (1.0 - beta * c);
+      float s = length(d.xy);
+      vec2 xy = s > 1e-5 ? d.xy / s * sqrt(max(1.0 - cr * cr, 0.0)) : vec2(0.0);
+      return vec3(xy, -cr);
+    }
+
     void main() {
-      vec3 col = uLens > 0.0 ? traceBlackHole(uViewRot * viewDir(vUv)) : texture2D(tScene, vUv).rgb;
+      float gain;
+      vec2 uv = cursorLens(vUv + gravitationalWaves(vUv), gain);
+      vec3 col;
+      if (uLens > 0.0) {
+        col = traceBlackHole(uViewRot * viewDir(uv));
+      } else if (abs(uBeta) > 1e-3) {
+        vec3 d = viewDir(uv);
+        vec3 r = aberrate(d, uBeta);
+        col = texture2D(tScene, fold(toUv(vec3(r.xy, -abs(r.z))))).rgb;
+        // Doppler factor D = 1 / γ(1 − β cos θ): ahead the light is blueshifted and brighter
+        // (∝ D³ for a spectrum like the stars'), behind it is redshifted and dimmer
+        float D = sqrt(1.0 - uBeta * uBeta) / (1.0 - uBeta * -d.z);
+        col *= pow(vec3(D), vec3(1.0, 1.8, 2.8));
+      } else {
+        col = texture2D(tScene, fold(0.5 + (uv - 0.5) / uMargin)).rgb;
+      }
+      col *= gain;
       col *= uExposure;
       // Highlights roll off smoothly instead of clipping
       float m = max(col.r, max(col.g, col.b));
@@ -492,8 +561,9 @@ const FinalShader = {
 
 // ─── Main class ──────────────────────────────────────────────────────────────
 export class GalaxyWorld {
-  constructor(container, { mobile = false } = {}) {
+  constructor(container, { mobile = false, reducedMotion = false } = {}) {
     this.mobile = mobile;
+    this.reducedMotion = reducedMotion;
 
     this.u = 0;
     this.uSmooth = 0;
@@ -506,9 +576,17 @@ export class GalaxyWorld {
     this.active = false;
     this.ready = 0;             // 0 → 1 as the imagery arrives
     this.loaded = { sky: false, map: false, stars: false };
-    this.drawnState = '';
+    this.drawnState = this.drawnScene = '';
     this.stillFor = 0;
     this.slowFrames = 0;
+
+    // Physics on the screen: the pointer as a lens, gravitational waves, the camera's speed
+    this.cursor = { x: 0.5, y: 0.5 };   // in uv (kept where it was when the pointer leaves, so the lens fades in place)
+    this.cursorOn = false;
+    this.lensStrength = 1;       // 0 → 1: how much of its mass the pointer has (less over a page)
+    this.lensRadius = 0;         // current Einstein radius, eased towards its target
+    this.ripples = [];           // { x, y, age, amp }
+    this.beta = 0;
 
     // Shared by the star materials: time and the previous frame's camera (for light streaks)
     this.time = { myr: { value: 0 }, prevMyr: { value: 0 } };
@@ -529,18 +607,32 @@ export class GalaxyWorld {
 
   _initRenderer(container) {
     const r = (this.renderer = new WebGLRenderer({ antialias: false, powerPreference: 'high-performance' }));
-    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.mobile ? 1.5 : 2));
+    this.baseDpr = Math.min(window.devicePixelRatio || 1, this.mobile ? 1.5 : 2);
+    r.setPixelRatio(this.baseDpr);
     r.setSize(window.innerWidth, window.innerHeight);
     container.appendChild(r.domElement);
     this.target = new WebGLRenderTarget(1, 1, { type: HalfFloatType, depthBuffer: false });
+    // Dynamic resolution: while the camera moves the scene is drawn into a smaller target (the
+    // motion streaks hide it), and once it comes to rest one full-resolution frame replaces it
+    this.targetFast = new WebGLRenderTarget(1, 1, { type: HalfFloatType, depthBuffer: false });
     this._sizeTarget();
   }
 
   _sizeTarget() {
     const size = this.renderer.getDrawingBufferSize(new Vector2());
     this.target.setSize(size.x, size.y);
-    if (this.resolution) this.resolution.value.copy(size);
+    this.fastScale = this.renderer.getPixelRatio() > 1.25 ? 0.5 : 0.7;
+    this.targetFast.setSize(Math.max(1, Math.round(size.x * this.fastScale)), Math.max(1, Math.round(size.y * this.fastScale)));
     this.hasPrev = false;
+  }
+
+  // Point the star shaders at the target about to be drawn: its size, and its pixels per CSS pixel
+  _useTarget(target, scale) {
+    this.resolution.value.set(target.width, target.height);
+    const dpr = this.renderer.getPixelRatio() * scale;
+    this.background.material.uniforms.uDpr.value = dpr;
+    if (this.stars) this.stars.material.uniforms.uDpr.value = dpr;
+    this.final.uniforms.tScene.value = target.texture;
   }
 
   _initScene() {
@@ -607,6 +699,8 @@ export class GalaxyWorld {
         tScene: { value: this.target.texture }, uExposure: { value: 1 }, uFade: { value: 0 },
         uLens: { value: 0 }, uCamRs: { value: new Vector3() }, uViewRot: { value: new Matrix3() },
         uDiskAxis: { value: DISK_AXIS }, uTime: { value: 0 }, uProjScale: { value: new Vector2(1, 1) },
+        uAspect: { value: 1 }, uMargin: { value: 1 }, uCursor: { value: new Vector3() }, uBeta: { value: 0 },
+        uRipples: { value: [new Vector4(), new Vector4(), new Vector4(), new Vector4()] },
       },
       defines: this.mobile ? { BH_STEPS: 140 } : {},
       vertexShader: FinalShader.vertexShader, fragmentShader: FinalShader.fragmentShader,
@@ -707,7 +801,9 @@ export class GalaxyWorld {
   }
 
   // The smaller images first, so the Galaxy appears quickly; large screens then swap in the
-  // full-resolution ones — uploaded only while the camera is still, so it never costs a scrolling frame
+  // full-resolution ones — fetched only once the Galaxy is on screen (a visitor who never leaves
+  // the hero doesn't download them) and uploaded only while the camera is still, so it never
+  // costs a scrolling frame
   _load() {
     const big = !this.mobile && this.renderer.capabilities.maxTextureSize >= 8192;
     const loader = new ImageBitmapLoader();
@@ -728,7 +824,7 @@ export class GalaxyWorld {
       this.sky.material.uniforms.tSky.value?.dispose();
       this.sky.material.uniforms.tSky.value = t;
       this.loaded.sky = true;
-      this.drawnState = '';
+      this.drawnState = this.drawnScene = '';
     };
     const setMap = bitmap => {
       const t = texture(bitmap, true);
@@ -738,16 +834,17 @@ export class GalaxyWorld {
       this.diskShared.tMap.value = t;
       this.diskShared.uTexSize.value = bitmap.width;
       this.loaded.map = true;
-      this.drawnState = '';
+      this.drawnState = this.drawnScene = '';
     };
     this.pendingUploads = [];
+    this.pendingFetches = [];
     loader.load(`${ASSETS}sky-4k.webp`, bitmap => {
       setSky(bitmap);
-      if (big) loader.load(`${ASSETS}sky-6k.webp`, full => this.pendingUploads.push(() => setSky(full)));
+      if (big) this.pendingFetches.push(() => loader.load(`${ASSETS}sky-6k.webp`, full => this.pendingUploads.push(() => setSky(full))));
     });
     loader.load(`${ASSETS}faceon-2k.webp`, bitmap => {
       setMap(bitmap);
-      if (big) loader.load(`${ASSETS}faceon-5k.webp`, full => this.pendingUploads.push(() => setMap(full)));
+      if (big) this.pendingFetches.push(() => loader.load(`${ASSETS}faceon-5k.webp`, full => this.pendingUploads.push(() => setMap(full))));
     });
     const img = new Image();
     img.onload = () => {
@@ -772,10 +869,44 @@ export class GalaxyWorld {
   // 0 → 1 after the last page: a logarithmic fall from parsecs to the event horizon
   setFinale(p) { this.finale = p; }
 
+  // The pointer, in CSS pixels (null when it leaves the window)
+  setCursor(x, y) {
+    this.cursorOn = x !== null;
+    if (this.cursorOn) this.cursor = { x: x / window.innerWidth, y: 1 - y / window.innerHeight };
+  }
+
+  setLensStrength(k) { this.lensStrength = k; }
+
+  // A gravitational wave from a point on the screen (CSS pixels); amp is the strain
+  addRipple(x, y, amp) {
+    if (this.reducedMotion) return;
+    if (this.ripples.length >= 4) this.ripples.shift();
+    this.ripples.push({ x: x / window.innerWidth, y: 1 - y / window.innerHeight, age: 0, amp });
+  }
+
+  // The direction of the Sun on screen (uv, y up) and whether it is in front of the camera,
+  // for the comets' tails
+  sunOnScreen() {
+    const v = SUN.clone().project(this.camera);
+    return { x: (v.x + 1) / 2, y: (v.y + 1) / 2, ahead: v.z < 1 };
+  }
+
   setActive(active) {
     if (active === this.active) return;
     this.active = active;
-    this.drawnState = '';
+    this.drawnState = this.drawnScene = '';
+    if (active) this._fetchFullResolution();
+  }
+
+  // Start the full-resolution downloads when the browser is next idle (and again for any
+  // whose smaller version arrives later)
+  _fetchFullResolution() {
+    const run = () => {
+      while (this.pendingFetches.length) this.pendingFetches.shift()();
+      if (!this.loaded.sky || !this.loaded.map) setTimeout(run, 1000);
+    };
+    if ('requestIdleCallback' in window) requestIdleCallback(run, { timeout: 3000 });
+    else setTimeout(run, 500);
   }
 
   _bindEvents() {
@@ -791,7 +922,7 @@ export class GalaxyWorld {
     const dpr = this.renderer.getPixelRatio();
     this.background.material.uniforms.uDpr.value = dpr;
     if (this.stars) this.stars.material.uniforms.uDpr.value = dpr;
-    this.drawnState = '';
+    this.drawnState = this.drawnScene = '';
   }
 
   // Interpolate between stations: direction and log-distance from the centre, so the
@@ -820,9 +951,18 @@ export class GalaxyWorld {
     const rawDt = this.timer.getDelta();
     const dt = Math.min(rawDt, 0.1);
 
-    // The camera has inertia: it follows the scroll position on a critically damped spring
-    [this.uSmooth, this.uVelocity] = followSpring(this.uSmooth, this.uVelocity, this.u, dt);
-    [this.finaleSmooth, this.finaleVelocity] = followSpring(this.finaleSmooth, this.finaleVelocity, this.finale, dt);
+    if (this.reducedMotion) {
+      // Reduced motion: no flight between places. The camera cuts from one station to the next
+      // halfway through each open stretch, and follows the finale exactly with the scroll
+      this.uSmooth = Math.round(this.u);
+      this.uVelocity = 0;
+      this.finaleSmooth = this.finale;
+      this.finaleVelocity = 0;
+    } else {
+      // The camera has inertia: it follows the scroll position on a critically damped spring
+      [this.uSmooth, this.uVelocity] = followSpring(this.uSmooth, this.uVelocity, this.u, dt);
+      [this.finaleSmooth, this.finaleVelocity] = followSpring(this.finaleSmooth, this.finaleVelocity, this.finale, dt);
+    }
     const f = this.finaleSmooth;
 
     const allLoaded = this.loaded.sky && this.loaded.map && this.loaded.stars;
@@ -838,7 +978,7 @@ export class GalaxyWorld {
       // (the parsecs go by quickly; most of the scroll is spent near the hole)
       const fall = 1 - Math.pow(1 - clamp01((f - 0.05) / 0.9), 2.2);
       const dist = Math.exp(lerp(Math.log(pos.length()), Math.log(RS_KPC * 2.2), fall));
-      pos.setLength(dist).applyAxisAngle(DISK_AXIS, 1.4 * Math.pow(smoothstep(0.4, 1.0, f), 2));
+      pos.setLength(dist).applyAxisAngle(DISK_AXIS, this.reducedMotion ? 0 : 1.4 * Math.pow(smoothstep(0.4, 1.0, f), 2));
       target.set(0, 0, 0);
       up.lerp(DISK_AXIS, smoothstep(0.05, 0.4, f)).normalize();
       // The lens widens at the end, so the shadow (45° across at 3 rs) is seen swallowing the ring
@@ -850,11 +990,43 @@ export class GalaxyWorld {
     // Near the hole the disk keeps orbiting, so frames are drawn continuously there
     const rsDist = pos.length() / RS_KPC;
     const lensing = f > 0 && rsDist < 5000;
-    this.diskTime += lensing ? dt * RS_PER_SECOND : 0;
-    const state = [pos.x, pos.y, pos.z, quat.x, quat.y, quat.z, quat.w, fovNow, this.intro, f, this.ready, this.active,
-      lensing && f < 0.99 ? this.diskTime : 0]
-      .map(v => (typeof v === 'number' ? v.toPrecision(7) : v)).join(',');
-    if (!this.active || state === this.drawnState) {
+    this.diskTime += lensing && !this.reducedMotion ? dt * RS_PER_SECOND : 0;   // reduced motion: the disk holds still
+    // The pointer's lens grows in and out; none in the fall (Sgr A* is the lens there)
+    const lensTarget = this.cursorOn && f === 0 && !this.reducedMotion ? (this.mobile ? 0.04 : 0.05) * this.lensStrength : 0;
+    this.lensRadius += (lensTarget - this.lensRadius) * (1 - Math.exp(-8 * dt));
+    if (Math.abs(this.lensRadius - lensTarget) < 2e-4) this.lensRadius = lensTarget;
+    // Speed from the camera's flight between chapters, capped at a quarter of c
+    this.beta = this.reducedMotion || f > 0 ? 0 : 0.25 * Math.tanh(this.uVelocity * 0.7);
+    if (Math.abs(this.beta) < 2e-3) this.beta = 0;
+    this.ripples.forEach(r => { r.age += dt; });
+    this.ripples = this.ripples.filter(r => r.age < 4);
+
+    // Moving forward, aberration pulls in light from beyond the screen's edge: render the scene
+    // that much wider. The screen's corner at θ shows light from θ' with
+    // tan(θ'/2) = √((1+β)/(1−β))·tan(θ/2), so the frame is widened by tan θ' / tan θ
+    const cam = this.camera;
+    const halfTan = Math.tan(MathUtils.degToRad(fovNow) / 2);
+    let margin = 1;
+    if (this.beta > 0) {
+      const corner = Math.atan(halfTan * Math.hypot(1, cam.aspect));
+      const seen = 2 * Math.atan(Math.sqrt((1 + this.beta) / (1 - this.beta)) * Math.tan(corner / 2));
+      margin = Math.min(Math.tan(seen) / Math.tan(corner), 1.6);
+    }
+
+    // Two things can need drawing: the 3D scene (only when the camera has moved) and the final
+    // pass over it (also for the pointer's lens, the waves and the fade). The pointer and the
+    // waves only ever redraw the final pass, which is one cheap full-screen shader
+    const key = values => values.map(v => (typeof v === 'number' ? v.toPrecision(7) : v)).join(',');
+    const sceneState = key([pos.x, pos.y, pos.z, quat.x, quat.y, quat.z, quat.w, fovNow, margin, this.ready, this.active]);
+    const postState = key([this.intro, f, this.ready, lensing && f < 0.99 ? this.diskTime : 0,
+      this.lensRadius, this.lensRadius ? this.cursor.x : 0, this.lensRadius ? this.cursor.y : 0, this.beta,
+      this.ripples.length ? this.timer.getElapsed() : 0]);
+    const state = sceneState + '|' + postState;
+    // After moving frames (drawn at reduced resolution), one crisp frame once the camera has been
+    // still for a moment (the pointer's lens and the waves don't count: they don't move the camera)
+    this.sceneStill = sceneState === this.drawnScene ? (this.sceneStill || 0) + dt : 0;
+    const crisp = this.crispPending && this.sceneStill > 0.15;
+    if (!this.active || (state === this.drawnState && !crisp)) {
       // Hidden or still: a good moment for one deferred upload of a full-resolution image
       this.stillFor += dt;
       if (this.stillFor > 0.5 && this.pendingUploads.length) {
@@ -865,28 +1037,41 @@ export class GalaxyWorld {
     }
     this.stillFor = 0;
     this.drawnState = state;
+    let sceneMoved = sceneState !== this.drawnScene || crisp;
+    this.drawnScene = sceneState;
 
     // If moving frames are consistently slow, lower the resolution a step (never below 1×)
-    if (rawDt > 1 / 45) this.slowFrames += 1; else this.slowFrames = Math.max(0, this.slowFrames - 1);
-    if (this.slowFrames > 40 && this.renderer.getPixelRatio() > 1) {
-      this.renderer.setPixelRatio(Math.max(1, this.renderer.getPixelRatio() - 0.25));
+    if (sceneMoved) {
+      if (rawDt > 1 / 45) this.slowFrames += 1; else this.slowFrames = Math.max(0, this.slowFrames - 1);
+    }
+    if (this.slowFrames > 40 && this.baseDpr > 1) {
+      this.baseDpr = Math.max(1, this.baseDpr - 0.25);
       this.slowFrames = 0;
+    }
+    // Every pixel of the fall into Sgr A* is ray-traced: there, one pixel per CSS pixel is plenty
+    const dprNow = lensing ? Math.min(this.baseDpr, this.mobile ? 0.75 : 1) : this.baseDpr;
+    if (dprNow !== this.renderer.getPixelRatio()) {
+      this.renderer.setPixelRatio(dprNow);
       this._resize();
+      this.drawnState = state;
+      this.drawnScene = sceneState;
+      sceneMoved = true;   // the targets were just reallocated: draw into them now
     }
 
     // Scroll is time: "now" at the Sun, 10 million years per chapter
     const myr = (this.uSmooth - 1) * 10;
     this.onReadout?.({
+      x: pos.x,
+      z: pos.z,
       kpc: pos.length(),
       myr,
       clock: rsDist < 1e4 ? Math.sqrt(Math.max(0, 1 - 1 / rsDist)) : null,   // a static clock's rate here
     });
 
     // Camera
-    const cam = this.camera;
     cam.position.copy(pos);
     cam.quaternion.copy(quat);
-    cam.fov = fovNow;
+    cam.fov = MathUtils.radToDeg(2 * Math.atan(halfTan * margin));
     cam.updateProjectionMatrix();
     cam.updateMatrixWorld();
 
@@ -923,32 +1108,48 @@ export class GalaxyWorld {
     fu.uExposure.value = exposure;
     fu.uFade.value = this.intro * this.ready * (1 - smoothstep(0.92, 0.99, f));
     fu.uLens.value = lensing ? 1 : 0;
+    fu.uProjScale.value.set(cam.projectionMatrix.elements[0] * margin, cam.projectionMatrix.elements[5] * margin);   // the screen's
+    fu.uMargin.value = margin;
+    fu.uAspect.value = window.innerWidth / window.innerHeight;
+    fu.uCursor.value.set(this.cursor.x, this.cursor.y, this.lensRadius);
+    fu.uBeta.value = this.beta;
+    fu.uRipples.value.forEach((v, i) => {
+      const r = this.ripples[i];
+      if (r) v.set(r.x, r.y, r.age, r.amp); else v.set(0, 0, 0, 0);
+    });
     if (lensing) {
       fu.uCamRs.value.copy(pos).divideScalar(RS_KPC);
       fu.uViewRot.value.setFromMatrix4(cam.matrixWorld);
       fu.uTime.value = this.diskTime;
-      fu.uProjScale.value.set(cam.projectionMatrix.elements[0], cam.projectionMatrix.elements[5]);
     }
 
-    // Streaks: where everything was at the previous frame (none after a pause or resize)
-    this.time.myr.value = myr;
+    // Streaks: where everything was at the previous frame (none after a pause or resize, and
+    // none with reduced motion, where the stars also stop orbiting)
+    if (this.reducedMotion) this.hasPrev = false;
+    this.time.myr.value = this.reducedMotion ? 0 : myr;
     if (!this.hasPrev) {
       this.prevViewProj.value.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse);
-      this.time.prevMyr.value = myr;
+      this.time.prevMyr.value = this.time.myr.value;
       this.prevCamPos.copy(pos);
     }
     this.background.material.uniforms.uPrevModel.value.makeTranslation(this.prevCamPos);
 
-    this.renderer.setRenderTarget(this.target);
-    this.renderer.setClearColor(0x000000, 1);
-    this.renderer.clear();
-    this.renderer.render(this.scene, cam);
-    this.renderer.setRenderTarget(null);
+    if (sceneMoved) {
+      // Moving: the smaller target. Still (or cutting, with reduced motion): full resolution
+      const full = crisp || this.reducedMotion;
+      const target = full ? this.target : this.targetFast;
+      this.crispPending = !full;
+      this._useTarget(target, full ? 1 : this.fastScale);
+      this.renderer.setRenderTarget(target);
+      this.renderer.setClearColor(0x000000, 1);
+      this.renderer.clear();
+      this.renderer.render(this.scene, cam);
+      this.renderer.setRenderTarget(null);
+      this.prevViewProj.value.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse);
+      this.time.prevMyr.value = this.time.myr.value;
+      this.prevCamPos.copy(pos);
+      this.hasPrev = true;
+    }
     this.renderer.render(this.finalScene, this.finalCamera);
-
-    this.prevViewProj.value.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse);
-    this.time.prevMyr.value = myr;
-    this.prevCamPos.copy(pos);
-    this.hasPrev = true;
   }
 }

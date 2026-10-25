@@ -89,7 +89,8 @@ export function initTransitions({ world, particles, reducedMotion, onStation, on
     // ── World pages ──
     const rise = reducedMotion ? 0 : MOTION.rise;
     const items = sections.flatMap(section => [...section.querySelectorAll(
-        '.section-head, .card, .stats, .social-links-grid, .contact-form, .contact-terminal, .mobile-topo-nav, .topology-panel, .approach .subsection-title'
+        '.section-head, .card, .stats, .social-links-grid, .contact-form, .contact-terminal, .approach .subsection-title, ' +
+        '.flight, .flight-detail, .sky-tabs, .sky-chart, .case-tabs, .case-studies, .oss'
     )].filter(el => !el.parentElement.closest('.card'))); // panels inside panels move with their parent
 
     // Content waits for the camera to come (nearly) to rest at its station, so the move and the

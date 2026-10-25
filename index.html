@@ -13,6 +13,13 @@
     <meta property="og:description"
         content="Portfolio of Sreejith M S — building automated, zero-downtime cloud infrastructure. AWS SAA &amp; RHCSA Certified." />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://sreejuzzz.github.io/agy/" />
+    <meta property="og:image" content="https://sreejuzzz.github.io/agy/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Sreejith M S, DevOps Engineer &amp; Cloud Architect, over a map of the Milky Way" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://sreejuzzz.github.io/agy/og-image.jpg" />
     <title>Sreejith M S | DevOps Engineer &amp; Cloud Architect</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -77,6 +84,14 @@
                         </svg>
                     </button>
                 </div>
+                <button type="button" class="sound-toggle" id="sound-toggle" aria-pressed="false" aria-label="Play ambient sound">
+                    <svg class="sound-off-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M11 5 6 9H2v6h4l5 4V5z" /><line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" />
+                    </svg>
+                    <svg class="sound-on-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M11 5 6 9H2v6h4l5 4V5z" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                    </svg>
+                </button>
                 <button type="button" class="menu-button" id="hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="nav-links">
                     <span class="menu-lines" aria-hidden="true"></span>
                 </button>
@@ -185,199 +200,40 @@
                 </div>
             </section>
 
-            <!-- Interactive Cloud Infrastructure Topology Map Experience -->
+            <!-- Experience: a flight path from 2018 to now. It draws itself in when the page arrives;
+                 the stops, the Earlier/Later buttons, a swipe or the arrow keys move between roles
+                 (filled in from MILESTONE_DATA in main.js) -->
             <section id="experience" class="world-section experience">
-                <div class="content">
-                    <header class="section-head">
-                        <p class="eyebrow">02 — Experience</p>
-                        <p class="galactic-position"><span class="cat-id">MW·02</span><span>Above the disk</span><span>R 13.9 kpc</span><span>φ +25.6°</span><span>z +7.0 kpc</span></p>
-                        <h2 class="section-title" data-reveal>Seven years in infrastructure.</h2>
-                        <p class="section-subtitle">Select a role to see what it involved.</p>
-                    </header>
+                <div class="content flight-track">
+                    <div class="flight-stage">
+                        <header class="section-head">
+                            <p class="eyebrow">02 — Experience</p>
+                            <p class="galactic-position"><span class="cat-id">MW·02</span><span>Above the disk</span><span>R 13.9 kpc</span><span>φ +25.6°</span><span>z +7.0 kpc</span></p>
+                            <h2 class="section-title" data-reveal>Seven years in infrastructure.</h2>
+                        </header>
 
-                    <!-- Mobile Navigation Backup: horizontal pills for touch ease -->
-                    <div class="mobile-topo-nav" aria-label="Experience Milestones" role="tablist">
-                        <button type="button" class="chip mobile-nav-btn active" data-milestone="4" role="tab" aria-selected="true" aria-controls="inspector-panel">Senior DevOps</button>
-                        <button type="button" class="chip mobile-nav-btn" data-milestone="3" role="tab" aria-selected="false" aria-controls="inspector-panel">Junior DevOps</button>
-                        <button type="button" class="chip mobile-nav-btn" data-milestone="2" role="tab" aria-selected="false" aria-controls="inspector-panel">Cloud Engineer</button>
-                        <button type="button" class="chip mobile-nav-btn" data-milestone="1" role="tab" aria-selected="false" aria-controls="inspector-panel">Linux Admin</button>
-                        <button type="button" class="chip mobile-nav-btn" data-milestone="0" role="tab" aria-selected="false" aria-controls="inspector-panel">Network Admin</button>
-                    </div>
+                        <div class="flight">
+                            <svg class="flight-path" viewBox="0 0 1000 160" preserveAspectRatio="none" aria-hidden="true">
+                                <path class="flight-path-base" />
+                                <path class="flight-path-lit" />
+                            </svg>
+                            <span class="flight-craft" aria-hidden="true"></span>
+                            <div class="flight-stops" role="tablist" aria-label="Roles, oldest first"></div>
+                        </div>
 
-                    <div class="console-layout">
-                        <!-- Left: DevOps ArgoCD-style CI/CD Pipeline Console -->
-                        <div class="topology-panel">
-                            <div class="pipeline-container" role="tablist">
-                                
-                                <!-- NODE 4: Kubernetes Control Plane Orchestrator (2025 - Present) -->
-                                <button type="button" class="html-topo-node active" data-milestone="4" role="tab" aria-selected="true" aria-controls="inspector-panel">
-                                    <span class="pipeline-track-wrapper">
-                                        <span class="pipeline-node">
-                                            <span class="node-ring"></span>
-                                            <span class="node-dot"></span>
-                                        </span>
-                                    </span>
-                                    <span class="stage-card">
-                                        <span class="stage-content">
-                                            <span class="node-label-system">Synnefo Solutions</span>
-                                            <span class="node-label-role">Senior DevOps &amp; Cloud Architect</span>
-                                            <span class="node-label-sub">2025 — Present</span>
-                                        </span>
-                                    </span>
-                                </button>
+                        <div class="flight-detail" id="flight-detail" role="tabpanel" aria-live="polite">
+                            <p class="flight-status eyebrow"></p>
+                            <h3 class="flight-title"></h3>
+                            <p class="flight-meta"></p>
+                            <p class="flight-description"></p>
+                            <ul class="flight-achievements"></ul>
+                            <p class="flight-tools"></p>
+                        </div>
 
-                                <!-- NODE 3: CI/CD Build Container Layer (2024 - 2025) -->
-                                <button type="button" class="html-topo-node" data-milestone="3" role="tab" aria-selected="false" aria-controls="inspector-panel">
-                                    <span class="pipeline-track-wrapper">
-                                        <span class="pipeline-node">
-                                            <span class="node-ring"></span>
-                                            <span class="node-dot"></span>
-                                        </span>
-                                    </span>
-                                    <span class="stage-card">
-                                        <span class="stage-content">
-                                            <span class="node-label-system">Synnefo Solutions</span>
-                                            <span class="node-label-role">Junior DevOps Engineer</span>
-                                            <span class="node-label-sub">2024 — 2025</span>
-                                        </span>
-                                    </span>
-                                </button>
-
-                                <!-- NODE 2: High Availability Scale Layer (2022 - 2024) -->
-                                <button type="button" class="html-topo-node" data-milestone="2" role="tab" aria-selected="false" aria-controls="inspector-panel">
-                                    <span class="pipeline-track-wrapper">
-                                        <span class="pipeline-node">
-                                            <span class="node-ring"></span>
-                                            <span class="node-dot"></span>
-                                        </span>
-                                    </span>
-                                    <span class="stage-card">
-                                        <span class="stage-content">
-                                            <span class="node-label-system">Synnefo Solutions</span>
-                                            <span class="node-label-role">Cloud Engineer</span>
-                                            <span class="node-label-sub">2022 — 2024</span>
-                                        </span>
-                                    </span>
-                                </button>
-
-                                <!-- NODE 1: Secure Bastion OS Layer (2020 - 2022) -->
-                                <button type="button" class="html-topo-node" data-milestone="1" role="tab" aria-selected="false" aria-controls="inspector-panel">
-                                    <span class="pipeline-track-wrapper">
-                                        <span class="pipeline-node">
-                                            <span class="node-ring"></span>
-                                            <span class="node-dot"></span>
-                                        </span>
-                                    </span>
-                                    <span class="stage-card">
-                                        <span class="stage-content">
-                                            <span class="node-label-system">Synnefo Solutions</span>
-                                            <span class="node-label-role">Linux Administrator</span>
-                                            <span class="node-label-sub">2020 — 2022</span>
-                                        </span>
-                                    </span>
-                                </button>
-
-                                <!-- NODE 0: Network Ingress Gateway (2018 - 2020) -->
-                                <button type="button" class="html-topo-node" data-milestone="0" role="tab" aria-selected="false" aria-controls="inspector-panel">
-                                    <span class="pipeline-track-wrapper">
-                                        <span class="pipeline-node">
-                                            <span class="node-ring"></span>
-                                            <span class="node-dot"></span>
-                                        </span>
-                                    </span>
-                                    <span class="stage-card">
-                                        <span class="stage-content">
-                                            <span class="node-label-system">SDC Networks</span>
-                                            <span class="node-label-role">Network Administrator</span>
-                                            <span class="node-label-sub">2018 — 2020</span>
-                                        </span>
-                                    </span>
-                                </button>
-
-                            </div>
-                                                </div>
-
-                        <!-- Right: Interactive Telemetry Inspector Panel -->
-                        <div class="telemetry-panel card" id="inspector-panel" role="tabpanel" aria-live="polite">
-                            
-                            <!-- Telemetry Console Header -->
-                            <div class="inspector-header">
-                                <div class="header-details">
-                                    <span class="eyebrow" id="inspector-status">Architecting</span>
-                                    <h3 class="system-title" id="inspector-title">Senior DevOps &amp; Cloud Architect</h3>
-                                    <p class="system-company" id="inspector-company">Synnefo Solutions, Ernakulam</p>
-                                    <p class="system-period" id="inspector-period">2025 — Present</p>
-                                    <p class="inspector-description" id="inspector-description"></p>
-                                </div>
-                            </div>
-
-                            <!-- Telemetry Console Grid Metrics -->
-                            <div class="inspector-metrics">
-                                <!-- Circle Gauge Card -->
-                                <div class="gauge-card inset-panel">
-                                    <div class="gauge-ring-wrapper">
-                                        <svg class="gauge-ring-svg" viewBox="0 0 80 80" width="80" height="80">
-                                            <circle class="gauge-ring-bg" cx="40" cy="40" r="34" fill="none" stroke-width="6"/>
-                                            <circle class="gauge-ring-fill" cx="40" cy="40" r="34" fill="none" stroke-width="6" stroke-dasharray="213.6" stroke-dashoffset="0.21" id="sla-gauge-fill"/>
-                                        </svg>
-                                        <span class="gauge-percentage-text" id="sla-percentage">10%</span>
-                                    </div>
-                                    <span class="gauge-label">Efficiency</span>
-                                </div>
-
-                                <!-- Focus Area sliders -->
-                                <div class="sliders-card inset-panel">
-                                    <h4 class="inspector-card-title">Primary Focus</h4>
-                                    <div class="comp-slider">
-                                        <div class="slider-info">
-                                            <span class="slider-name" id="comp-name-0">Physical Networking</span>
-                                            <span class="slider-val" id="comp-val-0">65%</span>
-                                        </div>
-                                        <div class="slider-track"><div class="slider-fill" id="comp-fill-0" style="width: 65%"></div></div>
-                                    </div>
-                                    <div class="comp-slider">
-                                        <div class="slider-info">
-                                            <span class="slider-name" id="comp-name-1">Firewalls &amp; Sec</span>
-                                            <span class="slider-val" id="comp-val-1">25%</span>
-                                        </div>
-                                        <div class="slider-track"><div class="slider-fill" id="comp-fill-1" style="width: 25%"></div></div>
-                                    </div>
-                                    <div class="comp-slider">
-                                        <div class="slider-info">
-                                            <span class="slider-name" id="comp-name-2">Support &amp; Triage</span>
-                                            <span class="slider-val" id="comp-val-2">10%</span>
-                                        </div>
-                                        <div class="slider-track"><div class="slider-fill" id="comp-fill-2" style="width: 10%"></div></div>
-                                    </div>
-                                </div>
-
-                                <!-- Bento quantitative metrics cards -->
-                                <div class="bento-stats-container">
-                                    <div class="metric-bento-card inset-panel">
-                                        <span class="bento-label" id="bento-label-1">Environment</span>
-                                        <span class="bento-value" id="metric-bento-scale">On-Premises</span>
-                                    </div>
-                                    <div class="metric-bento-card inset-panel">
-                                        <span class="bento-label" id="bento-label-2">Key Challenge</span>
-                                        <span class="bento-value" id="metric-bento-highlight">Routing</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- YAML Configuration Manifest Spec Window (Terminal Vibe) -->
-                            <div class="code-window">
-                                <div class="code-header">
-                                    <span class="code-dots" aria-hidden="true"><span></span><span></span><span></span></span>
-                                    <span class="code-title">manifest-spec.yaml</span>
-                                    <button type="button" class="chip chip--small" id="yaml-copy-btn" aria-label="Copy YAML spec">
-                                        <span class="copy-text">Copy</span>
-                                    </button>
-                                </div>
-                                <div class="code-body" aria-live="polite">
-                                    <pre class="code-pre" id="yaml-manifest-code"><code><!-- Filled dynamically via main.js --></code></pre>
-                                </div>
-                            </div>
-
+                        <div class="flight-nav">
+                            <button type="button" class="chip flight-prev" aria-label="Earlier role">← Earlier</button>
+                            <span class="flight-count" aria-hidden="true"></span>
+                            <button type="button" class="chip flight-next" aria-label="Later role">Later →</button>
                         </div>
                     </div>
                 </div>
@@ -390,9 +246,13 @@
                         <p class="eyebrow">03 — Skills</p>
                         <p class="galactic-position"><span class="cat-id">MW·03</span><span>Scutum–Centaurus Arm</span><span>R 6.3 kpc</span><span>φ −52°</span><span>z 0</span></p>
                         <h2 class="section-title" data-reveal>Skills &amp; tech stack.</h2>
-                        <p class="section-subtitle">The tools I use to build resilient, scalable infrastructure.</p>
+                        <p class="section-subtitle">The tools I use to build resilient, scalable infrastructure. Each category is a constellation; the brighter the star, the longer I’ve used it. Point at one to see where I picked it up.</p>
                     </header>
-                    <div id="skills-grid" class="skills-grid"></div>
+                    <div id="skills-grid" class="sky-chart"></div>
+                    <!-- Catalogue entry for the skill under the pointer (or the last one tapped) -->
+                    <div class="skill-readout" id="skill-readout" aria-live="polite">
+                        <p class="skill-readout-empty">Point at a skill, or tap one, to see where it was used. Skills from the same role light up together.</p>
+                    </div>
                 </div>
             </section>
 
@@ -402,33 +262,124 @@
                         <p class="eyebrow">04 — Work</p>
                         <p class="galactic-position"><span class="cat-id">MW·04</span><span>The Galactic bar</span><span>half-length 5.0 kpc</span><span>inclined 27°</span></p>
                         <h2 class="section-title" data-reveal>Selected work.</h2>
-                        <p class="section-subtitle">Open-source tools and infrastructure code.</p>
+                        <p class="section-subtitle">Three problems from production, what I did about them, and what changed.</p>
                     </header>
-                    <div class="project-gallery">
-                        <a href="https://github.com/SreejuZzz/devops-tasks" target="_blank" rel="noopener noreferrer"
-                            class="card project-card">
-                            <h3>devops-tasks</h3>
-                            <p>A comprehensive collection of DevOps automation scripts, CI/CD pipeline configurations, and infrastructure-as-code snippets.</p>
-                            <div class="tag-list">
-                                <span class="tag">Ansible</span><span class="tag">Terraform</span><span class="tag">Jenkins</span><span class="tag">Docker</span>
+
+                    <!-- Case studies: the facts and numbers come from MILESTONE_DATA in src/main.js; keep the two in step -->
+                    <div class="case-studies">
+                        <article class="case-study">
+                            <p class="case-label"><span class="cat-id">Case 01</span><span class="case-role">Senior DevOps &amp; Cloud Architect · 2025 — Present</span></p>
+                            <div class="case-body">
+                                <div class="case-text">
+                                    <h3>A multi-region platform that stays up</h3>
+                                    <dl class="case-steps">
+                                        <div><dt>Context</dt><dd>AWS spread across more than 20 accounts, and a production cluster that can't go down.</dd></div>
+                                        <div><dt>What I did</dt><dd>Defined the infrastructure in Terraform, and moved delivery to GitOps: GitHub Actions builds, ArgoCD deploys to EKS in more than one region.</dd></div>
+                                        <div><dt>Result</dt><dd>99.99% uptime on the production cluster.</dd></div>
+                                    </dl>
+                                    <div class="tag-list"><span class="tag">Terraform</span><span class="tag">EKS</span><span class="tag">ArgoCD</span><span class="tag">GitHub Actions</span></div>
+                                </div>
+                                <figure class="case-figure">
+                                    <p class="case-metric"><span class="case-metric-value">99.99%</span><span class="case-metric-label">uptime</span></p>
+                                    <svg class="case-diagram" viewBox="0 0 320 170" role="img" aria-label="Diagram: a git push runs GitHub Actions, ArgoCD deploys to EKS clusters in two regions, all defined in Terraform across 20+ AWS accounts">
+                                        <defs><marker id="arrow-a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L8 4L0 8z" /></marker></defs>
+                                        <g class="d-box"><rect x="4" y="22" width="64" height="30" /><text x="36" y="41">git push</text></g>
+                                        <g class="d-box"><rect x="94" y="22" width="84" height="30" /><text x="136" y="41">Actions</text></g>
+                                        <g class="d-box d-box--accent"><rect x="204" y="22" width="70" height="30" /><text x="239" y="41">ArgoCD</text></g>
+                                        <path class="d-flow" d="M68 37H92" marker-end="url(#arrow-a)" />
+                                        <path class="d-flow" d="M178 37H202" marker-end="url(#arrow-a)" />
+                                        <path class="d-flow" d="M239 52V72H170V86" marker-end="url(#arrow-a)" />
+                                        <path class="d-flow" d="M239 72H274V86" marker-end="url(#arrow-a)" />
+                                        <g class="d-box"><rect x="120" y="88" width="100" height="40" /><text x="170" y="106">EKS</text><text class="d-sub" x="170" y="120">region A</text></g>
+                                        <g class="d-box"><rect x="230" y="88" width="86" height="40" /><text x="273" y="106">EKS</text><text class="d-sub" x="273" y="120">region B</text></g>
+                                        <rect class="d-zone" x="4" y="140" width="312" height="24" />
+                                        <text class="d-sub" x="160" y="156">Terraform · 20+ AWS accounts</text>
+                                    </svg>
+                                </figure>
                             </div>
-                        </a>
-                        <a href="https://github.com/SreejuZzz/linux-tasks" target="_blank" rel="noopener noreferrer"
-                            class="card project-card">
-                            <h3>linux-tasks</h3>
-                            <p>Advanced Linux administration scripts, secure server hardening configurations, SELinux policies, and system tuning utilities.</p>
-                            <div class="tag-list">
-                                <span class="tag">RHEL</span><span class="tag">SELinux</span><span class="tag">Bash</span><span class="tag">iptables</span>
+                        </article>
+
+                        <article class="case-study">
+                            <p class="case-label"><span class="cat-id">Case 02</span><span class="case-role">Cloud Engineer · 2022 — 2024</span></p>
+                            <div class="case-body">
+                                <div class="case-text">
+                                    <h3>Moving to the cloud without going offline</h3>
+                                    <dl class="case-steps">
+                                        <div><dt>Context</dt><dd>Workloads had to move from on-premises servers to AWS and GCP while they kept serving traffic.</dd></div>
+                                        <div><dt>What I did</dt><dd>Built the target networks, compute and databases (VPC, EC2, RDS) across availability zones with auto-scaling, then moved traffic over with Route 53.</dd></div>
+                                        <div><dt>Result</dt><dd>More than 20 migrations with zero downtime, and infrastructure costs down 40%.</dd></div>
+                                    </dl>
+                                    <div class="tag-list"><span class="tag">AWS</span><span class="tag">GCP</span><span class="tag">Route 53</span><span class="tag">Multi-AZ</span></div>
+                                </div>
+                                <figure class="case-figure">
+                                    <p class="case-metric"><span class="case-metric-value">20+</span><span class="case-metric-label">zero-downtime migrations · −40% cost</span></p>
+                                    <svg class="case-diagram" viewBox="0 0 320 170" role="img" aria-label="Diagram: traffic moves from on-premises servers through Route 53 to EC2 and RDS spread over two availability zones">
+                                        <defs><marker id="arrow-b" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L8 4L0 8z" /></marker></defs>
+                                        <g class="d-box d-box--faded"><rect x="4" y="66" width="70" height="38" /><text x="39" y="84">on-prem</text><text class="d-sub" x="39" y="97">before</text></g>
+                                        <g class="d-box d-box--accent"><rect x="98" y="66" width="72" height="38" /><text x="134" y="89">Route 53</text></g>
+                                        <path class="d-flow" d="M74 85H96" marker-end="url(#arrow-b)" />
+                                        <rect class="d-zone" x="194" y="8" width="122" height="72" />
+                                        <text class="d-sub d-zone-label" x="200" y="22">AZ a</text>
+                                        <g class="d-box"><rect x="206" y="30" width="46" height="38" /><text x="229" y="53">EC2</text></g>
+                                        <g class="d-box"><rect x="260" y="30" width="46" height="38" /><text x="283" y="53">RDS</text></g>
+                                        <rect class="d-zone" x="194" y="90" width="122" height="72" />
+                                        <text class="d-sub d-zone-label" x="200" y="104">AZ b</text>
+                                        <g class="d-box"><rect x="206" y="112" width="46" height="38" /><text x="229" y="135">EC2</text></g>
+                                        <g class="d-box"><rect x="260" y="112" width="46" height="38" /><text x="283" y="135">RDS</text></g>
+                                        <path class="d-flow" d="M170 78L204 52" marker-end="url(#arrow-b)" />
+                                        <path class="d-flow" d="M170 92L204 128" marker-end="url(#arrow-b)" />
+                                        <path class="d-link" d="M283 68V112" />
+                                    </svg>
+                                </figure>
                             </div>
-                        </a>
-                        <a href="https://github.com/SreejuZzz/shell" target="_blank" rel="noopener noreferrer"
-                            class="card project-card">
-                            <h3>shell</h3>
-                            <p>Custom Bash and Shell scripts designed to automate daily infrastructure operations, monitoring alerts, and deployment workflows.</p>
-                            <div class="tag-list">
-                                <span class="tag">Bash</span><span class="tag">Shell</span><span class="tag">Cron</span><span class="tag">Automation</span>
+                        </article>
+
+                        <article class="case-study">
+                            <p class="case-label"><span class="cat-id">Case 03</span><span class="case-role">Linux Administrator · 2020 — 2022</span></p>
+                            <div class="case-body">
+                                <div class="case-text">
+                                    <h3>A hundred servers, built by script</h3>
+                                    <dl class="case-steps">
+                                        <div><dt>Context</dt><dd>More than 100 bare-metal and virtual servers on RHEL, CentOS and Ubuntu, each set up and hardened by hand.</dd></div>
+                                        <div><dt>What I did</dt><dd>Scripted the builds in Bash and Ansible, with the same hardening on every machine: SELinux policies and iptables.</dd></div>
+                                        <div><dt>Result</dt><dd>Deployment time down 70%, and zero breaches.</dd></div>
+                                    </dl>
+                                    <div class="tag-list"><span class="tag">Ansible</span><span class="tag">Bash</span><span class="tag">SELinux</span><span class="tag">RHEL</span></div>
+                                </div>
+                                <figure class="case-figure">
+                                    <p class="case-metric"><span class="case-metric-value">−70%</span><span class="case-metric-label">deployment time · zero breaches</span></p>
+                                    <svg class="case-diagram" viewBox="0 0 320 170" role="img" aria-label="Diagram: one Bash and Ansible playbook builds and hardens a fleet of more than 100 servers">
+                                        <defs><marker id="arrow-c" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L8 4L0 8z" /></marker></defs>
+                                        <g class="d-box d-box--accent"><rect x="4" y="58" width="92" height="50" /><text x="50" y="80">playbook</text><text class="d-sub" x="50" y="95">Bash · Ansible</text></g>
+                                        <path class="d-flow" d="M96 83H124" marker-end="url(#arrow-c)" />
+                                        <rect class="d-zone" x="128" y="8" width="188" height="154" />
+                                        <g class="d-fleet"><rect x="140" y="20" width="11" height="11" /><rect x="157" y="20" width="11" height="11" /><rect x="174" y="20" width="11" height="11" /><rect x="191" y="20" width="11" height="11" /><rect x="208" y="20" width="11" height="11" /><rect x="225" y="20" width="11" height="11" /><rect x="242" y="20" width="11" height="11" /><rect x="259" y="20" width="11" height="11" /><rect x="276" y="20" width="11" height="11" /><rect x="293" y="20" width="11" height="11" /><rect x="140" y="39" width="11" height="11" /><rect x="157" y="39" width="11" height="11" /><rect x="174" y="39" width="11" height="11" /><rect x="191" y="39" width="11" height="11" /><rect x="208" y="39" width="11" height="11" /><rect x="225" y="39" width="11" height="11" /><rect x="242" y="39" width="11" height="11" /><rect x="259" y="39" width="11" height="11" /><rect x="276" y="39" width="11" height="11" /><rect x="293" y="39" width="11" height="11" /><rect x="140" y="58" width="11" height="11" /><rect x="157" y="58" width="11" height="11" /><rect x="174" y="58" width="11" height="11" /><rect x="191" y="58" width="11" height="11" /><rect x="208" y="58" width="11" height="11" /><rect x="225" y="58" width="11" height="11" /><rect x="242" y="58" width="11" height="11" /><rect x="259" y="58" width="11" height="11" /><rect x="276" y="58" width="11" height="11" /><rect x="293" y="58" width="11" height="11" /><rect x="140" y="77" width="11" height="11" /><rect x="157" y="77" width="11" height="11" /><rect x="174" y="77" width="11" height="11" /><rect x="191" y="77" width="11" height="11" /><rect x="208" y="77" width="11" height="11" /><rect x="225" y="77" width="11" height="11" /><rect x="242" y="77" width="11" height="11" /><rect x="259" y="77" width="11" height="11" /><rect x="276" y="77" width="11" height="11" /><rect x="293" y="77" width="11" height="11" /><rect x="140" y="96" width="11" height="11" /><rect x="157" y="96" width="11" height="11" /><rect x="174" y="96" width="11" height="11" /><rect x="191" y="96" width="11" height="11" /><rect x="208" y="96" width="11" height="11" /><rect x="225" y="96" width="11" height="11" /><rect x="242" y="96" width="11" height="11" /><rect x="259" y="96" width="11" height="11" /><rect x="276" y="96" width="11" height="11" /><rect x="293" y="96" width="11" height="11" /><rect x="140" y="115" width="11" height="11" /><rect x="157" y="115" width="11" height="11" /><rect x="174" y="115" width="11" height="11" /><rect x="191" y="115" width="11" height="11" /><rect x="208" y="115" width="11" height="11" /><rect x="225" y="115" width="11" height="11" /><rect x="242" y="115" width="11" height="11" /><rect x="259" y="115" width="11" height="11" /><rect x="276" y="115" width="11" height="11" /><rect x="293" y="115" width="11" height="11" /></g>
+                                        <text class="d-sub" x="222" y="152">100+ nodes · SELinux · iptables</text>
+                                    </svg>
+                                </figure>
                             </div>
-                        </a>
+                        </article>
+                    </div>
+
+                    <div class="oss">
+                        <p class="eyebrow">Open source</p>
+                        <ul class="oss-list">
+                        <li><a class="oss-row" href="https://github.com/SreejuZzz/devops-tasks" target="_blank" rel="noopener noreferrer">
+                            <span class="oss-name">devops-tasks</span>
+                            <span class="oss-desc">DevOps automation scripts, CI/CD pipeline configurations and infrastructure-as-code snippets.</span>
+                            <span class="oss-tags">Ansible · Terraform · Jenkins · Docker</span>
+                        </a></li>
+                        <li><a class="oss-row" href="https://github.com/SreejuZzz/linux-tasks" target="_blank" rel="noopener noreferrer">
+                            <span class="oss-name">linux-tasks</span>
+                            <span class="oss-desc">Linux administration scripts, server hardening, SELinux policies and system tuning.</span>
+                            <span class="oss-tags">RHEL · SELinux · Bash · iptables</span>
+                        </a></li>
+                        <li><a class="oss-row" href="https://github.com/SreejuZzz/shell" target="_blank" rel="noopener noreferrer">
+                            <span class="oss-name">shell</span>
+                            <span class="oss-desc">Bash scripts that automate daily operations, monitoring alerts and deployments.</span>
+                            <span class="oss-tags">Bash · Cron · Automation</span>
+                        </a></li>
+                        </ul>
                     </div>
                 </div>
             </section>
@@ -527,6 +478,10 @@
                             </svg>
                             <span>Facebook</span>
                         </a>
+                        <button type="button" class="chip social-link" id="terminal-open" aria-haspopup="dialog">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                            <span>Terminal</span>
+                        </button>
                         <a href="resume.pdf" download class="chip chip--accent social-link" aria-label="Download Resume">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                             <span>Download Resume</span>
@@ -587,6 +542,7 @@
                     </div>
                     <p class="finale-title">Nothing escapes from here.</p>
                     <a href="#home" class="btn-primary finale-escape">Escape to the top</a>
+                    <p class="finale-hint">Psst: press <kbd>~</kbd> anywhere for a terminal.</p>
                     <p class="finale-note">Every pixel of the fall is traced through the curved spacetime around Sgr&nbsp;A*: the lensed arch of the disk, the photon ring and the shadow are calculated, not drawn. The disk's colour and brightness follow its temperature, Doppler beaming and gravitational redshift, and its orbit is sped up about 500×. (In visible light the Galactic centre is hidden behind about 30 magnitudes of dust.)</p>
                     <p class="finale-credits">Milky Way imagery, adapted: <a href="https://www.esa.int/ESA_Multimedia/Images/2025/01/The_best_Milky_Way_map_by_Gaia" target="_blank" rel="noopener noreferrer">ESA/Gaia/DPAC, Stefan Payne-Wardenaar</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/igo/" target="_blank" rel="noopener noreferrer">CC BY-SA 3.0 IGO</a>) · <a href="https://www.eso.org/public/images/eso0932a/" target="_blank" rel="noopener noreferrer">ESO/S. Brunier</a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>)</p>
                 </div>

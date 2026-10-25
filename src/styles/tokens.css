@@ -43,12 +43,15 @@
 
     /* Galaxy pages — always dark, whatever the hero theme (space is dark; text stays readable) */
     --w-fog: #05070c;
-    --w-ink: #f2f5fa;
-    --w-text: #e3e8f0;
-    --w-muted: #aab4c6;
-    --w-line: rgba(170, 195, 235, 0.2);
-    --w-line-strong: rgba(170, 195, 235, 0.45);
-    --w-hair: rgba(170, 195, 235, 0.14);
+    --w-ink: #f7f9fc;
+    --w-text: #edf1f7;
+    --w-muted: #c9d1de;                      /* secondary text: still bright enough over the Galaxy */
+    --w-line: rgba(190, 210, 240, 0.3);
+    --w-line-strong: rgba(190, 210, 240, 0.55);
+    --w-hair: rgba(190, 210, 240, 0.2);
+    /* Text sits straight on the Galaxy: a tight dark edge keeps it legible over the bright bulge.
+       Small blur radii only — a wide blur on every line of text is costly to paint as it animates */
+    --w-shadow: 0 0 1px rgba(3, 5, 10, 0.95), 0 1px 4px rgba(3, 5, 10, 0.8);
     --w-panel: rgba(9, 12, 20, 0.86);
     /* Colours are temperatures: blackbody colours, as in the galaxy and the black hole's disk */
     --w-accent: #cadaff;                     /* 10,000 K — anything interactive */
@@ -60,7 +63,7 @@
     --w-error: #ff9a8a;
 
     /* Type scale: ratio ≈ 1.2 (display titles are fluid) */
-    --text-xs: 0.6875rem;    /* 11px — mono labels */
+    --text-xs: 0.75rem;      /* 12px — mono labels */
     --text-sm: 0.8125rem;    /* 13px */
     --text-base: 0.9375rem;  /* 15px */
     --text-md: 1.0625rem;    /* 17px — body */

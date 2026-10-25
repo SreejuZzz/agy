@@ -33,6 +33,27 @@
     --h-line: var(--w-line);
 }
 
+/* In the Galaxy a dark scrim fades down behind the header, so the chapters stay readable over
+   the bright parts of the scene and over page text scrolling beneath */
+.main-header::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 -2.5rem;
+    z-index: -1;
+    background: linear-gradient(#03050a, #03050a 62%, rgba(3, 5, 10, 0));
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--motion-enter) var(--ease-out);
+}
+
+.main-header.is-world::before {
+    opacity: 1;
+}
+
+.main-header.is-falling::before {
+    opacity: 0;
+}
+
 /* Scroll progress: a hairline along the bottom edge (--progress set from JS) */
 .main-header::after {
     content: '';
@@ -105,6 +126,7 @@
 .nav-links a:focus-visible,
 .brand:focus-visible,
 .theme-toggle:focus-visible,
+.sound-toggle:focus-visible,
 .menu-button:focus-visible {
     outline: 1px solid var(--h-ink);
     outline-offset: 4px;
@@ -196,6 +218,7 @@
 }
 
 .theme-toggle,
+.sound-toggle,
 .menu-button {
     display: grid;
     place-items: center;
@@ -211,6 +234,7 @@
 }
 
 .theme-toggle:hover,
+.sound-toggle:hover,
 .menu-button:hover {
     color: var(--h-ink);
     border-color: var(--h-ink);
@@ -225,6 +249,40 @@
 .theme-toggle .moon-icon { display: block; }
 body.light-mode .theme-toggle .sun-icon { display: block; }
 body.light-mode .theme-toggle .moon-icon { display: none; }
+
+/* Sound: only in the Galaxy (the hero has the theme switch); fades out with the header in the fall */
+.sound-toggle svg {
+    width: 16px;
+    height: 16px;
+}
+
+.sound-toggle {
+    width: 0;
+    margin-left: -0.75rem;   /* takes no room (nor the gap) while hidden */
+    border-width: 0;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transition: color var(--motion-quick) var(--ease-out), border-color var(--motion-quick) var(--ease-out),
+        opacity var(--motion-quick) var(--ease-out), width var(--motion-quick) var(--ease-out),
+        margin var(--motion-quick) var(--ease-out), visibility 0s linear var(--motion-quick);
+}
+
+.main-header.is-world .sound-toggle {
+    width: 38px;
+    margin-left: 0;
+    border-width: 1px;
+    opacity: 1;
+    visibility: visible;
+    transition: color var(--motion-quick) var(--ease-out), border-color var(--motion-quick) var(--ease-out),
+        opacity var(--motion-quick) var(--ease-out), width var(--motion-quick) var(--ease-out),
+        margin var(--motion-quick) var(--ease-out);
+}
+
+.sound-toggle .sound-on-icon { display: none; }
+.sound-toggle[aria-pressed='true'] .sound-on-icon { display: block; }
+.sound-toggle[aria-pressed='true'] .sound-off-icon { display: none; }
+.sound-toggle[aria-pressed='true'] { color: var(--h-ink); }
 
 /* Two lines that turn into a cross */
 .menu-button {
