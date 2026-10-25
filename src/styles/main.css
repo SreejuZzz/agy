@@ -83,8 +83,7 @@ html.lenis body {
     background: radial-gradient(closest-side, rgba(2, 3, 6, 0.88), rgba(2, 3, 6, 0) 100%);
 }
 
-.chapter,
-.minimap-caption {
+.chapter {
     text-shadow: var(--w-shadow);
 }
 
@@ -125,8 +124,9 @@ html.lenis body {
    ============================================= */
 
 .world-section {
-    /* Open stretch before each page: the previous page has faded out and the 3D scene plays on its own */
-    margin-top: 150vh;
+    /* Open stretch before each page: the previous page has faded out and the 3D scene plays on its own
+       (the scroll timings in transitions.js are proportional to it) */
+    margin-top: 100vh;
     position: relative;
     min-height: 100vh;
     width: 100%;

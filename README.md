@@ -23,13 +23,12 @@ The Work section has three case studies (context, what I did, result, with an ar
 A few things to find:
 
 - **Skills are stars**: point at one (or tap it) to see when and in which role it came in; skills from the same role light up together, and the role links back to Experience.
-- **Mini-map** (`src/minimap.js`): the face-on Galaxy with the camera's real position on it and a marker per chapter. Always on in the margin of wide screens; between pages on smaller ones.
 - **Terminal** (`src/terminal.js`): press `~`, or the Terminal chip in Contact. Try `help`, `kubectl get pods`, `cd skills`.
 - **Sound** (`src/ambient.js`): off by default; the speaker in the header turns on a drone, synthesised live, that deepens as you fall towards Sgr A* and goes silent at the horizon.
 - **Physics everywhere** (all off with reduced motion, and quieter while a page is being read):
-  - The pointer is a small mass that lenses the Galaxy behind it: arcs, magnification and an Einstein ring (the final pass in `src/galaxy-world.js`).
+  - Between pages, the pointer is a small mass that lenses the Galaxy behind it: arcs, magnification and an Einstein ring (the final pass in `src/galaxy-world.js`).
   - Flying between chapters at up to a quarter of light speed: relativistic aberration crowds the view forward and Doppler shifts it blue ahead (the scene is rendered wider while moving, so there are no edges to fold).
-  - Gravitational waves (`src/waves.js`) from every click and on arriving at a chapter: a ring of plus-polarised strain through the Galaxy, and the page itself stretches and squeezes; "Escape to the top" sets off a black-hole merger chirp.
+  - Gravitational waves (`src/waves.js`) on arriving at a chapter and when a thrown chip is swallowed: a ring of plus-polarised strain through the Galaxy, and the page itself stretches and squeezes; "Escape to the top" sets off a black-hole merger chirp.
   - Skills orbit on small Kepler ellipses (`src/orbits.js`): Kepler's equation and third law, inner stars faster; a constellation stops under the pointer.
   - Contact chips hang on springs (`src/throw.js`): drag one and it wobbles back; throw it hard and Sgr A* pulls it in early (1/r², tidal stretch, redshift), then it re-forms.
   - Now and then a comet crosses an open stretch (`src/comet.js`), its ion tail pointing straight away from the Sun and its dust tail curving back along its track.

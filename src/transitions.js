@@ -163,7 +163,7 @@ export function initTransitions({ world, particles, reducedMotion, onStation, on
     ScrollTrigger.create({
         trigger: lastSection,
         start: 'bottom bottom',
-        end: '+=220%',
+        end: '+=190%',
         pin: true,
         invalidateOnRefresh: true,
         onRefresh: () => gravity?.reset(),
@@ -209,11 +209,16 @@ export function initTransitions({ world, particles, reducedMotion, onStation, on
             const prev = sections[i - 1] || hero;
             const prevBottom = top(prev) + prev.offsetHeight;
             const sTop = top(s);
+            const gap = sTop - prevBottom;   // the open stretch (the page's margin-top)
             // The first station is reached early enough for its detailed render to finish
-            // before the page arrives; later stations are reached early in their stretch
-            const arrive = i === 0 ? sTop - vh * 1.1 : prevBottom + vh * 0.15;
+            // before the page arrives; later stations are reached early in their stretch.
+            // The chapter title has gone by the time the page's heading is revealed (at 80% of the
+            // viewport, see the batch above): the heading sits ~150 px into its section
+            const arrive = i === 0 ? prevBottom + gap * 0.27 : prevBottom + Math.min(vh * 0.15, gap * 0.2);
             const depart = sTop + s.offsetHeight - vh * 0.5;
-            return { start: arrive, end: Math.max(arrive, depart), openFrom: prevBottom - vh * 0.05, openTo: sTop - vh * 0.85 };
+            const openFrom = prevBottom - vh * 0.05;
+            const openTo = Math.max(sTop - vh * 0.68, openFrom + vh * 0.3);
+            return { start: arrive, end: Math.max(arrive, depart), openFrom, openTo };
         });
     };
 

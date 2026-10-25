@@ -5,7 +5,6 @@ import { initTransitions } from './transitions.js';
 import gsap from 'gsap';
 import { SplitText } from 'gsap/SplitText';
 import { MOTION, spring } from './motion.js';
-import { createMinimap } from './minimap.js';
 import { createAmbient } from './ambient.js';
 import { createTerminal } from './terminal.js';
 import { createWaves } from './waves.js';
@@ -142,10 +141,7 @@ function onStation(u) {
         activeIndex = index;
         navAnchors.forEach(a => a.classList.toggle('active', a.getAttribute('href') === `#${sectionIds[index]}`));
         placeIndicator();
-        minimap?.setActive(index - 1);
     }
-    inWorld = u > 0.5;
-    updateMinimap();
     const progress = (maxScroll > 0 ? Math.min(Math.max(window.scrollY / maxScroll, 0), 1) : 0).toFixed(3);
     if (header && progress !== lastProgress) {
         lastProgress = progress;
@@ -178,20 +174,10 @@ const chapterData = document.getElementById('chapter-data');
 let chapterShown = -1;
 let lastShown = '';
 
-// ─── Mini-map: wide screens keep it in the margin; narrower ones show it between pages ───
-const wideMargin = window.matchMedia('(min-width: 1600px)');
-let inWorld = false, openK = 0, finaleK = 0;
-const minimap = world ? createMinimap({ chapters: CHAPTERS, sectionIds: sectionIds.slice(1), onSelect: scrollToSection }) : null;
-function updateMinimap() {
-    minimap?.setVisible(inWorld && finaleK < 0.02 && (wideMargin.matches || openK > 0.5));
-}
-
 function onOpenStretch(k, index, finale) {
-    openK = k;
-    finaleK = finale;
     ambient.update({ finale });
-    // Physics is quiet over a page being read and full strength between pages
-    world?.setLensStrength(0.35 + 0.65 * k);
+    // The pointer's lens only between pages: over a page being read it would pull the eye off the text
+    world?.setLensStrength(k);
     comets?.setOpen(finale > 0 ? 0 : k);
     if (finale > 0.055) throwables?.reset();   // just before the page itself starts to fall (gravity starts at 0.06)
     // Dim the scene behind a page while it is read; full brightness between pages and in the finale
@@ -262,7 +248,6 @@ if (world && readout) {
         const text = formatDistance(kpc), extra = formatExtra(myr, clock);
         if (text !== shown) readout.textContent = shown = text;
         if (readoutExtra && extra !== shownExtra) readoutExtra.textContent = shownExtra = extra;
-        minimap?.setPosition(x, z);
         ambient.update({ kpc });
     };
 }
@@ -857,12 +842,7 @@ throwables = reducedMotion ? null : createThrowables([...document.querySelectorA
     onEaten: (x, y) => waves.emit(x, y, 1.4),
 });
 
-// ─── Gravitational waves: from every click in the Galaxy, and a merger to escape ───
-document.addEventListener('click', e => {
-    if (!header.classList.contains('is-world') || e.defaultPrevented) return;
-    if (e.target.closest?.('input, textarea, dialog, .finale-escape')) return;
-    waves.emit(e.clientX, e.clientY);
-});
+// ─── Gravitational waves: a merger to escape (they also come from chapter arrivals and thrown chips) ───
 document.querySelector('.finale-escape')?.addEventListener('click', e => {
     const box = e.currentTarget.getBoundingClientRect();
     waves.merger(box.left + box.width / 2, box.top + box.height / 2);
