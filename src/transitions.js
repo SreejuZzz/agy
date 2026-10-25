@@ -32,7 +32,7 @@ const clamp01 = v => Math.min(Math.max(v, 0), 1);
 const easeInOutSine = t => -(Math.cos(Math.PI * t) - 1) / 2;
 const smoothstep = (a, b, v) => { const t = clamp01((v - a) / (b - a)); return t * t * (3 - 2 * t); };
 
-export function initTransitions({ world, particles, reducedMotion, onStation, onReveal, onOpenStretch }) {
+export function initTransitions({ world, particles, reducedMotion, onStation, onReveal, onOpenStretch, onNavigate, holdReveal, onFinaleStart }) {
     const hero = document.getElementById('home');
     const header = document.getElementById('main-header');
     const sections = [...document.querySelectorAll('.world-section')];
@@ -46,13 +46,18 @@ export function initTransitions({ world, particles, reducedMotion, onStation, on
         lenis.on('scroll', ScrollTrigger.update);
         gsap.ticker.add(time => lenis.raf(time * 1000));
         gsap.ticker.lagSmoothing(0);
+    }
 
+    // In-page links: through onNavigate when there is one (warp.js: a warp, a smooth scroll to a
+    // neighbour, or with reduced motion an instant jump), otherwise a smooth scroll
+    if (onNavigate || lenis) {
         document.querySelectorAll('a[href^="#"]').forEach(a => {
             a.addEventListener('click', e => {
                 const target = document.querySelector(a.getAttribute('href'));
                 if (!target) return;
                 e.preventDefault();
-                lenis.scrollTo(target, { duration: 2, easing: spring });
+                if (onNavigate) onNavigate(target);
+                else lenis.scrollTo(target, { duration: 2, easing: spring });
             });
         });
     }
@@ -68,38 +73,46 @@ export function initTransitions({ world, particles, reducedMotion, onStation, on
             start: 'top top',
             end: 'bottom top',
             scrub: reducedMotion ? true : 0.8,
+            // The opening shot, in one take: the ring collapses into a point of light at the centre
+            // of the screen; that point is the Milky Way, seen from 1.5 Mpc away, and the camera
+            // flies in until it fills the view (then on to the Sun, below)
             onUpdate: self => {
                 const p = self.progress;
                 header.classList.toggle('is-world', p > 0.5);
                 if (world) {
-                    world.setIntro(smoothstep(0.5, 1, p));
+                    world.setIntro(smoothstep(0.36, 0.6, p));
+                    world.setApproach(reducedMotion ? 1 : smoothstep(0.4, 0.92, p));
                     world.setActive(p > 0.3);
                 }
-                if (particles) particles.setPaused(p > 0.98);
+                if (particles) {
+                    particles.setCollapse(reducedMotion ? 0 : smoothstep(0.02, 0.48, p));
+                    particles.setPaused(p > 0.98);
+                }
             },
         },
     })
-        // Dissolve through black: the hero fades out, then the galaxy fades up
-        .to('#home .content', { y: lift, autoAlpha: 0, duration: 0.45 }, 0)
-        .to('.particles-bg', { autoAlpha: 0, duration: 0.5 }, 0.05)
-        .to('#world', { autoAlpha: 1, duration: 0.3 }, 0.35)
+        // The hero's words lift away as the ring falls in; the collapsed point hands over to the Galaxy
+        .to('#home .content', { y: lift, autoAlpha: 0, duration: 0.4 }, 0)
+        .to('.particles-bg', { autoAlpha: 0, duration: reducedMotion ? 0.5 : 0.14 }, reducedMotion ? 0.05 : 0.44)
+        .to('#world', { autoAlpha: 1, duration: reducedMotion ? 0.3 : 0.12 }, reducedMotion ? 0.35 : 0.38)
         .to('#theme-toggle', { autoAlpha: 0, duration: 0.45 }, 0)
         .fromTo('.readout', { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.3 }, 0.6);
 
     // ── World pages ──
     const rise = reducedMotion ? 0 : MOTION.rise;
     const items = sections.flatMap(section => [...section.querySelectorAll(
-        '.section-head, .card, .stats, .social-links-grid, .contact-form, .contact-terminal, .approach .subsection-title, ' +
+        '.section-head, .card, .stats, .contact-primary, .channels, .approach .subsection-title, ' +
         '.flight, .flight-detail, .sky-tabs, .sky-chart, .case-tabs, .case-studies, .oss'
     )].filter(el => !el.parentElement.closest('.card'))); // panels inside panels move with their parent
 
     // Content waits for the camera to come (nearly) to rest at its station, so the move and the
     // reveal read as one shot — but never more than 0.7 s
+    // (While a warp is under way, it waits however long the flight takes: holdReveal)
     const afterCamera = fn => {
         if (!world || reducedMotion) return fn();
         const t0 = performance.now();
         const check = () => {
-            if (!world.settled && performance.now() - t0 < 700) return;
+            if (holdReveal?.() || (!world.settled && performance.now() - t0 < 700)) return;
             gsap.ticker.remove(check);
             fn();
         };
@@ -142,9 +155,10 @@ export function initTransitions({ world, particles, reducedMotion, onStation, on
 
     // ── Finale: the page falls into Sgr A*, and the camera after it ──
     const lastInner = lastSection.querySelector('.content');
+    let lastShown = false;
     const gravity = reducedMotion ? null : createGravity({
         texts: () => [
-            ...lastSection.querySelectorAll('.eyebrow, .galactic-position span, .section-title .reveal-word, .section-subtitle, .social-link, .form-group label, .btn-text, .code-title, .terminal-line'),
+            ...lastSection.querySelectorAll('.eyebrow, .galactic-position span, .section-title .reveal-word, .section-subtitle, .contact-address, .contact-action, .social-link, .form-group label, .btn-text, .terminal-line'),
             header.querySelector('.brand'),
             ...header.querySelectorAll('.site-nav a'),
         ],
@@ -171,6 +185,18 @@ export function initTransitions({ world, particles, reducedMotion, onStation, on
         onUpdate: self => {
             const p = self.progress;
             finaleProgress = p;
+            // Whatever of the last page hasn't faded in yet (a fast scroll to the end) is shown at
+            // once, so the black hole has all of it to take: it measures the page as the fall begins
+            if (p > 0 && !lastShown) {
+                lastShown = true;
+                const pending = items.filter(el => lastSection.contains(el));
+                pending.forEach(el => { el.dataset.revealId = 'finale'; });   // a queued reveal won't rerun
+                gsap.killTweensOf(pending);
+                gsap.set(pending, { autoAlpha: 1, y: 0 });
+                onFinaleStart?.();
+            } else if (p === 0) {
+                lastShown = false;
+            }
             if (world) world.setFinale(p);
             // The fall has a short dead zone first (gravity's start), so reaching the send button never starts it
             if (gravity) gravity.update(p);
@@ -236,7 +262,12 @@ export function initTransitions({ world, particles, reducedMotion, onStation, on
 
     const stationFromScroll = y => {
         if (!anchors.length) return 0;
-        if (y <= anchors[0].start) return easeInOutSine(clamp01(y / Math.max(anchors[0].start, 1)));
+        // Over the hero the camera holds on the whole Galaxy (the opening shot flies in to it),
+        // then dives to the first station, the Sun
+        if (y <= anchors[0].start) {
+            const hold = reducedMotion ? 0 : hero.offsetHeight * 0.92;
+            return easeInOutSine(clamp01((y - hold) / Math.max(anchors[0].start - hold, 1)));
+        }
         for (let i = 0; i < anchors.length; i++) {
             const a = anchors[i];
             if (y <= a.end) return i + 1;                       // parked on page i

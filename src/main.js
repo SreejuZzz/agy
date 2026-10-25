@@ -4,6 +4,7 @@ import { GalaxyWorld, RS_KPC } from './galaxy-world.js';
 import { initTransitions } from './transitions.js';
 import gsap from 'gsap';
 import { SplitText } from 'gsap/SplitText';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { MOTION, spring } from './motion.js';
 import { createAmbient } from './ambient.js';
 import { createTerminal } from './terminal.js';
@@ -11,6 +12,7 @@ import { createWaves } from './waves.js';
 import { createOrbits } from './orbits.js';
 import { createThrowables } from './throw.js';
 import { createComets } from './comet.js';
+import { createWarp } from './warp.js';
 
 // Reveal the document once main JS and styles have loaded
 document.documentElement.style.visibility = 'visible';
@@ -18,7 +20,7 @@ document.documentElement.style.visibility = 'visible';
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const isMobile = window.innerWidth <= 768;
 
-// ─── Headings: each word slides up from behind a mask, one after another ───
+// ─── Headings: split into words (the finale shreds these) ───
 function splitWords(el) {
     if (el.dataset.split) return [...el.querySelectorAll('.reveal-word')];
     el.dataset.split = 'true';
@@ -26,25 +28,80 @@ function splitWords(el) {
     el.textContent = '';
     el.setAttribute('aria-label', words.join(' '));
     return words.map((word, i) => {
-        const mask = document.createElement('span');
-        mask.className = 'reveal-mask';
-        mask.setAttribute('aria-hidden', 'true');
         const span = document.createElement('span');
         span.className = 'reveal-word';
+        span.setAttribute('aria-hidden', 'true');
         span.textContent = word;
-        mask.appendChild(span);
-        el.appendChild(mask);
+        el.appendChild(span);
         if (i < words.length - 1) el.appendChild(document.createTextNode(' '));
         return span;
     });
 }
 
+// ─── …and each page's title condenses like a forming star ───
+// Its letters start scattered in a cloud and fall in from rest: free fall along the radial
+// cycloid r = r₀(1 + cos η)/2, η + sin η = π s, so each one accelerates inwards; the free-fall
+// time grows as r₀^1.5, so the outer letters arrive last. A little angular momentum makes them
+// spiral, compression heats them from dull red to white, and each one rings once as it settles.
+function infallAngle(s) {
+    const target = Math.PI * s;
+    let eta = target;
+    for (let i = 0; i < 6; i++) {
+        const slope = 1 + Math.cos(eta);
+        if (slope < 1e-6) break;
+        eta = Math.min(Math.max(eta - (eta + Math.sin(eta) - target) / slope, 0), Math.PI);
+    }
+    return eta;
+}
+// Fraction of the starting distance still to go: the fall, then a short damped ring past the end
+function infall(s) {
+    const FALL = 0.82;
+    if (s < FALL) return (1 + Math.cos(infallAngle(s / FALL))) / 2;
+    const u = (s - FALL) / (1 - FALL);
+    return -0.035 * Math.sin(Math.PI * 2 * u) * Math.exp(-3 * u);
+}
+const COOL = [255, 120, 80], HOT = [247, 249, 252];   // dull red → --w-ink
+const condensing = new Map();
+// The black hole is about to take the last page: any title still condensing settles at once
+function settleTitles() {
+    [...condensing.values()].forEach(finish => finish());
+    document.querySelectorAll('#portal-contact [data-reveal]').forEach(splitWords);
+}
+
 function revealHeading(el) {
     const words = splitWords(el);
     if (reducedMotion) return;
-    gsap.fromTo(words,
-        { yPercent: 110 },
-        { yPercent: 0, duration: MOTION.enter, ease: MOTION.ease, stagger: 0.04, overwrite: true });
+    condensing.get(el)?.();   // a reveal already under way: put its letters back first
+    const split = SplitText.create(words, { type: 'chars' });
+    let longest = 0;
+    const tweens = split.chars.map(ch => {
+        const a = Math.random() * Math.PI * 2;
+        const r0 = 70 + Math.random() * 230;
+        const x0 = Math.cos(a) * r0, y0 = Math.sin(a) * r0 * 0.6;   // a flattened cloud
+        const spin = (Math.random() - 0.5) * 0.9;
+        const duration = 0.45 + 1.25 * Math.pow(r0 / 300, 1.5);
+        longest = Math.max(longest, duration);
+        const st = { s: 0 };
+        const draw = () => {
+            const g = infall(st.s);
+            const th = spin * Math.max(g, 0);                      // the angle still to turn
+            const c = Math.cos(th), sn = Math.sin(th);
+            const x = (x0 * c - y0 * sn) * g, y = (x0 * sn + y0 * c) * g;
+            ch.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
+            const heat = 1 - Math.min(Math.max(g, 0), 1);
+            ch.style.opacity = Math.min(heat * 1.4, 1).toFixed(3);
+            ch.style.color = `rgb(${COOL.map((v, i) => Math.round(v + (HOT[i] - v) * heat)).join(',')})`;
+        };
+        draw();
+        return gsap.to(st, { s: 1, duration, ease: 'none', onUpdate: draw });
+    });
+    const finish = () => {
+        tweens.forEach(t => t.kill());
+        split.revert();
+        condensing.delete(el);
+    };
+    condensing.set(el, finish);
+    gsap.delayedCall(longest + 0.05, () => { if (condensing.get(el) === finish) finish(); });
 }
 
 // ─── Body text: each line slides up from behind its own mask, like the headings ───
@@ -119,11 +176,17 @@ let activeIndex = -1;
 
 // Smooth scrolling (set once the scroll choreography starts, at the end of this file)
 let lenis = null;
+// Going somewhere: a warp across the Galaxy, or a smooth scroll to a neighbouring chapter (warp.js)
+let finaleNow = 0;
+const warp = createWarp({
+    world,
+    reducedMotion,
+    getLenis: () => lenis,
+    order: [...sectionIds, 'event-horizon'],
+    getIndex: () => (finaleNow > 0.1 ? sectionIds.length : Math.max(activeIndex, 0)),
+});
 function scrollToSection(selector) {
-    const target = document.querySelector(selector);
-    if (!target) return;
-    if (lenis) lenis.scrollTo(target, { duration: 2, easing: spring });
-    else target.scrollIntoView();
+    warp.go(selector);
 }
 
 // The underline moves to the active chapter on the shared spring (and hides on the hero)
@@ -175,6 +238,7 @@ let chapterShown = -1;
 let lastShown = '';
 
 function onOpenStretch(k, index, finale) {
+    finaleNow = finale;
     ambient.update({ finale });
     // The pointer's lens only between pages: over a page being read it would pull the eye off the text
     world?.setLensStrength(k);
@@ -561,6 +625,161 @@ if (flightTrack && flightStops) {
     if (!reducedMotion) placeCraft(0);   // until the page arrives and flies it in
 }
 
+// ─── Contact: copy the address ───
+const copyAddress = document.getElementById('contact-copy');
+if (copyAddress && navigator.clipboard) {
+    copyAddress.addEventListener('click', () => {
+        navigator.clipboard.writeText(copyAddress.dataset.copy).then(() => {
+            copyAddress.textContent = 'Copied';
+            copyAddress.classList.add('is-done');
+            setTimeout(() => { copyAddress.textContent = 'Copy address'; copyAddress.classList.remove('is-done'); }, 1800);
+        }).catch(() => {});
+    });
+} else {
+    copyAddress?.remove();
+}
+
+// ─── Contact: the form opens on request ───
+const writeBtn = document.getElementById('contact-write');
+const contactFormEl = document.getElementById('contact-form');
+if (writeBtn && contactFormEl) {
+    writeBtn.addEventListener('click', () => {
+        const open = contactFormEl.hidden;
+        contactFormEl.hidden = !open;
+        writeBtn.setAttribute('aria-expanded', String(open));
+        writeBtn.textContent = open ? 'Close the form' : 'Write a message';
+        // The page changed height: re-measure the scroll (the finale's pin, the camera stations)
+        ScrollTrigger.refresh();
+        if (!open) return;
+        if (!reducedMotion) gsap.fromTo(contactFormEl, { autoAlpha: 0, y: MOTION.rise }, { autoAlpha: 1, y: 0, duration: MOTION.enter, ease: MOTION.ease });
+        document.getElementById('contact-name').focus({ preventScroll: true });
+    });
+}
+
+// ─── Contact Form ───
+const contactForm = document.getElementById('contact-form');
+const contactTerminal = document.getElementById('contact-terminal-output');
+const submitBtn = document.getElementById('submit-btn');
+
+function validateField(input, errorEl) {
+    if (!input.value.trim()) {
+        input.classList.add('invalid');
+        errorEl.textContent = 'This field is required.';
+        return false;
+    }
+    if (input.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value)) {
+        input.classList.add('invalid');
+        errorEl.textContent = 'Please enter a valid email.';
+        return false;
+    }
+    input.classList.remove('invalid');
+    errorEl.textContent = '';
+    return true;
+}
+
+function escapeHtml(str) {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function typeContactTerminal(lines) {
+    if (!contactTerminal) return;
+    contactTerminal.innerHTML = '';
+
+    lines.forEach((line, i) => {
+        setTimeout(() => {
+            const lineEl = document.createElement('div');
+            lineEl.className = 'terminal-line';
+
+            if (line.type === 'cmd') {
+                lineEl.innerHTML = `<span class="prompt">$</span> <span class="cmd">${escapeHtml(line.text)}</span>`;
+            } else {
+                lineEl.innerHTML = `<span class="${line.type}">${escapeHtml(line.text)}</span>`;
+            }
+
+            contactTerminal.appendChild(lineEl);
+            contactTerminal.scrollTop = contactTerminal.scrollHeight;
+
+            // On the final line, add a blinking cursor and reset the button
+            if (i === lines.length - 1) {
+                const cursorLine = document.createElement('div');
+                cursorLine.className = 'terminal-line terminal-cursor-blink';
+                cursorLine.innerHTML = '<span class="prompt">$</span> ';
+                contactTerminal.appendChild(cursorLine);
+
+                // Reset button after success animation
+                if (submitBtn) {
+                    setTimeout(() => {
+                        submitBtn.classList.remove('loading', 'success');
+                        submitBtn.querySelector('.btn-text').textContent = 'Send message';
+                    }, 3000);
+                }
+            }
+        }, 80 + i * 100);
+    });
+}
+
+if (contactForm && submitBtn) {
+    // Clear validation on input
+    contactForm.querySelectorAll('input, textarea').forEach(input => {
+        input.addEventListener('input', () => {
+            input.classList.remove('invalid');
+            const errorEl = input.parentElement.querySelector('.field-error');
+            if (errorEl) errorEl.textContent = '';
+        });
+    });
+
+    contactForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const nameInput = document.getElementById('contact-name');
+        const emailInput = document.getElementById('contact-email');
+        const msgInput = document.getElementById('contact-message');
+        const nameError = document.getElementById('name-error');
+        const emailError = document.getElementById('email-error');
+        const msgError = document.getElementById('message-error');
+
+        const isNameValid = validateField(nameInput, nameError);
+        const isEmailValid = validateField(emailInput, emailError);
+        const isMsgValid = validateField(msgInput, msgError);
+
+        if (!isNameValid || !isEmailValid || !isMsgValid) return;
+
+        // Start "deploying" animation
+        submitBtn.classList.add('loading');
+
+        const name = nameInput.value.trim();
+        const email = emailInput.value.trim();
+
+        typeContactTerminal([
+            { type: 'cmd', text: 'kubectl apply -f message-payload.yaml' },
+            { type: 'output', text: `Packaging payload from ${name} <${email}>...` },
+            { type: 'output', text: 'Validating SMTP route configuration...' },
+            { type: 'success', text: '[ ok ] route validated: smtp-gateway.sreejith.cloud' },
+            { type: 'output', text: 'Provisioning message container...' },
+            { type: 'success', text: '[ ok ] container deployed: msg-relay-pod-7x3k2' },
+            { type: 'output', text: 'Encrypting payload with TLS 1.3...' },
+            { type: 'success', text: '[ ok ] payload encrypted and sealed' },
+            { type: 'output', text: 'Deploying to message queue...' },
+            { type: 'success', text: '[ ok ] message deployed' },
+            { type: 'output', text: '' },
+            { type: 'info', text: 'Thank you. I\'ll reply within 24 hours.' },
+        ]);
+
+        // Show success on button
+        setTimeout(() => {
+            submitBtn.classList.remove('loading');
+            submitBtn.classList.add('success');
+            submitBtn.querySelector('.btn-text').textContent = 'Sent';
+            contactForm.reset();
+        }, 1400);
+    });
+}
+
 // ─── Skills Section ───────────────────────────────────────────────────────────
 // Edit this data to update your skills in the future.
 const SKILLS_DATA = [
@@ -699,6 +918,7 @@ function renderSkills() {
             s.classList.toggle('is-current', s === star);
         });
         grid.classList.toggle('has-lit', !!star);
+        drawLeader(star);
         if (!star) {
             readout.classList.remove('is-filled');
             readout.replaceChildren(empty);
@@ -706,22 +926,36 @@ function renderSkills() {
         }
         readout.classList.add('is-filled');
         readout.replaceChildren();
-        const head = document.createElement('p');
-        head.className = 'skill-readout-head';
-        head.innerHTML = `<span class="cat-id"></span><span class="skill-readout-name"></span><span class="skill-readout-cat"></span>`;
-        head.children[0].textContent = star.dataset.id;
-        head.children[1].textContent = star.textContent;
-        head.children[2].textContent = star.dataset.category;
-        readout.appendChild(head);
 
-        const body = document.createElement('p');
-        body.className = 'skill-readout-body';
+        // A catalogue entry: its number, the name and constellation, then the record
+        const id = document.createElement('p');
+        id.className = 'skill-entry-id';
+        id.textContent = star.dataset.id;
+        const main = document.createElement('div');
+        main.className = 'skill-entry-main';
+        const head = document.createElement('p');
+        head.className = 'skill-entry-head';
+        head.innerHTML = '<span class="skill-entry-name"></span><span class="skill-entry-cat"></span>';
+        head.children[0].textContent = star.textContent;
+        head.children[1].textContent = star.dataset.category;
+        main.appendChild(head);
+
         const role = MILESTONE_DATA[star.dataset.role];
         if (role) {
             const since = parseInt(role.period, 10);
             const years = Math.max(1, thisYear - since);
             const lit = stars.filter(s => s.dataset.role === star.dataset.role).length;
-            body.append(`In use since ${since}, about ${years} year${years === 1 ? '' : 's'}. First picked up as `);
+            const data = document.createElement('dl');
+            data.className = 'skill-entry-data';
+            const field = (label, value) => {
+                const row = document.createElement('div');
+                const dt = document.createElement('dt');
+                dt.textContent = label;
+                const dd = document.createElement('dd');
+                dd.append(value);
+                row.append(dt, dd);
+                data.appendChild(row);
+            };
             const link = document.createElement('button');
             link.type = 'button';
             link.className = 'skill-readout-role';
@@ -730,12 +964,60 @@ function renderSkills() {
                 selectMilestone(Number(star.dataset.role));
                 scrollToSection('#experience');
             });
-            body.append(link, ` at ${role.company.split(',')[0]}, along with ${lit - 1} other skill${lit === 2 ? '' : 's'} lit up here.`);
+            field('Since', String(since));
+            field('In use', `${years} year${years === 1 ? '' : 's'}`);
+            field('Picked up as', link);
+            field('Lit with it', `${lit - 1} skill${lit === 2 ? '' : 's'}`);
+            main.appendChild(data);
         } else {
-            body.textContent = `Part of my ${star.dataset.category.toLowerCase()} toolkit.`;
+            const note = document.createElement('p');
+            note.className = 'skill-entry-note';
+            note.textContent = `Part of my ${star.dataset.category.toLowerCase()} toolkit.`;
+            main.appendChild(note);
         }
-        readout.appendChild(body);
+        readout.append(id, main);
+        drawLeader(star);   // again, now the entry has its final size
     };
+
+    // The leader: a hairline drawn from the star down to its catalogue entry, as on a star chart
+    const content = grid.parentElement;
+    const leader = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    leader.classList.add('skill-leader');
+    leader.setAttribute('aria-hidden', 'true');
+    leader.innerHTML = '<path pathLength="1" /><circle r="2.5" />';
+    content.appendChild(leader);
+    const leaderPath = leader.querySelector('path'), leaderEnd = leader.querySelector('circle');
+    let leaderFor = null;
+    function drawLeader(star) {
+        if (!star) {
+            leader.classList.remove('is-shown');
+            leaderFor = null;
+            return;
+        }
+        const cb = content.getBoundingClientRect(), sb = star.getBoundingClientRect(), rb = readout.getBoundingClientRect();
+        const dot = parseFloat(getComputedStyle(star).getPropertyValue('--d')) || 5;
+        const x = sb.left - cb.left + dot / 2, y = sb.top - cb.top + sb.height / 2;
+        const endX = rb.left - cb.left + 3, endY = rb.top - cb.top;
+        const elbow = endY - 18;
+        leader.setAttribute('width', cb.width);
+        leader.setAttribute('height', cb.height);
+        leaderPath.setAttribute('d', `M${x.toFixed(1)} ${(y + dot).toFixed(1)}V${elbow.toFixed(1)}H${endX.toFixed(1)}V${endY.toFixed(1)}`);
+        leaderEnd.setAttribute('cx', endX.toFixed(1));
+        leaderEnd.setAttribute('cy', endY.toFixed(1));
+        leader.classList.add('is-shown');
+        if (leaderFor !== star && !reducedMotion) {
+            // Plot it: drawn from the star down
+            leaderPath.style.transition = 'none';
+            leaderPath.style.strokeDashoffset = '1';
+            leaderPath.getBoundingClientRect();
+            leaderPath.style.transition = '';
+            leaderPath.style.strokeDashoffset = '0';
+        } else if (reducedMotion) {
+            leaderPath.style.strokeDashoffset = '0';
+        }
+        leaderFor = star;
+    }
+    window.addEventListener('resize', () => { if (leaderFor) drawLeader(leaderFor); }, { passive: true });
 
     const hoverable = window.matchMedia('(hover: hover)').matches;
     stars.forEach(star => {
@@ -782,6 +1064,9 @@ if (stats) {
         (el.matches(LINE_TEXT) ? [el] : [...el.querySelectorAll(LINE_TEXT)]).forEach(revealLines);
     },
     onOpenStretch,
+    onNavigate: el => warp.go(el),
+    onFinaleStart: settleTitles,
+    holdReveal: () => warp.isWarping(),
 }));
 
 // ─── Work: one case at a time; the three headline numbers are the switch ───

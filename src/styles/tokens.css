@@ -139,3 +139,10 @@ html {
        across it): on phones that would zoom the page out and cut the scroll short */
     overflow-x: clip;
 }
+
+/* Reduced motion: jumps are instant */
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+}

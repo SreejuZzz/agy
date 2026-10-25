@@ -95,11 +95,11 @@ export const STATIONS = [
 // One step of a critically damped spring (ω = 3 /s): x'' = ω²(target − x) − 2ω x'.
 // Integrated exactly over the step, so it is stable at any frame rate; snaps to rest when settled.
 const OMEGA = 3;
-function followSpring(x, v, target, dt) {
-  const d = x - target, e = Math.exp(-OMEGA * dt);
-  const c = v + OMEGA * d;
+function followSpring(x, v, target, dt, omega = OMEGA) {
+  const d = x - target, e = Math.exp(-omega * dt);
+  const c = v + omega * d;
   const nd = (d + c * dt) * e;
-  const nv = (v - OMEGA * c * dt) * e;
+  const nv = (v - omega * c * dt) * e;
   return Math.abs(nd) < 1e-4 && Math.abs(nv) < 1e-4 ? [target, 0] : [target + nd, nv];
 }
 
@@ -369,6 +369,8 @@ const FinalShader = {
     uniform vec3 uCursor;      // the pointer as a lens: xy in uv, z its Einstein radius (screen heights)
     uniform float uBeta;       // the camera's speed as a fraction of c; + forward, − back
     uniform vec4 uRipples[4];  // gravitational waves: xy origin (uv), z age (s), w strain amplitude
+    uniform float uWarp;       // warp navigation, 0 → 1
+    uniform float uWarpTime;   // time spent in the warp, weighted by its strength (s)
     varying vec2 vUv;
 
     #ifndef BH_STEPS
@@ -528,6 +530,23 @@ const FinalShader = {
       return vec3(xy, -cr);
     }
 
+    // Warp: the scene recorded as a fast dolly would be — each pixel integrates the light along its
+    // line to the point of travel (a radial shutter blur), the further out the longer the smear
+    vec3 dollyBlur(vec2 uv, vec3 base) {
+      vec2 toward = uv - 0.5;
+      float amount = 0.11 * uWarp * (0.35 + 0.65 * smoothstep(0.0, 0.5, length(toward * vec2(uAspect, 1.0))));
+      vec3 acc = base;
+      float wsum = 1.0;
+      for (int i = 1; i < 14; i++) {
+        float t = float(i) / 13.0;
+        float w = 1.0 - t * 0.6;
+        vec2 suv = 0.5 + toward * (1.0 - amount * t);
+        acc += texture2D(tScene, clamp(0.5 + (suv - 0.5) / uMargin, 0.0, 1.0)).rgb * w;
+        wsum += w;
+      }
+      return acc / wsum;
+    }
+
     void main() {
       float gain;
       vec2 uv = cursorLens(vUv + gravitationalWaves(vUv), gain);
@@ -537,15 +556,26 @@ const FinalShader = {
       } else if (abs(uBeta) > 1e-3) {
         vec3 d = viewDir(uv);
         vec3 r = aberrate(d, uBeta);
-        col = texture2D(tScene, fold(toUv(vec3(r.xy, -abs(r.z))))).rgb;
+        // Near light speed the screen's edges show light from beside and behind the camera, which
+        // was never rendered: there the view fades to black (the tunnel of a warp)
+        vec2 suv = toUv(vec3(r.xy, -abs(r.z)));
+        vec2 over = max(abs(suv - 0.5) - 0.5, 0.0);
+        float seen = (1.0 - smoothstep(0.0, 0.12, length(over))) * smoothstep(0.05, -0.15, r.z);
+        col = texture2D(tScene, clamp(suv, 0.0, 1.0)).rgb * seen;
         // Doppler factor D = 1 / γ(1 − β cos θ): ahead the light is blueshifted and brighter
         // (∝ D³ for a spectrum like the stars'), behind it is redshifted and dimmer
-        float D = sqrt(1.0 - uBeta * uBeta) / (1.0 - uBeta * -d.z);
-        col *= pow(vec3(D), vec3(1.0, 1.8, 2.8));
+        float D = clamp(sqrt(1.0 - uBeta * uBeta) / (1.0 - uBeta * -d.z), 0.25, 2.5);
+        col *= pow(vec3(D), vec3(0.7, 1.0, 1.4));   // a hint of the shift, not a wash
       } else {
         col = texture2D(tScene, fold(0.5 + (uv - 0.5) / uMargin)).rgb;
       }
       col *= gain;
+      if (uWarp > 0.01 && uLens == 0.0) {
+        col = dollyBlur(uv, col);
+        // A breath of exposure at speed, centred on where we're going
+        vec2 c = (vUv - 0.5) * vec2(uAspect, 1.0);
+        col *= 1.0 + 0.35 * uWarp * exp(-dot(c, c) / 0.08);
+      }
       col *= uExposure;
       // Highlights roll off smoothly instead of clipping
       float m = max(col.r, max(col.g, col.b));
@@ -587,6 +617,10 @@ export class GalaxyWorld {
     this.lensRadius = 0;         // current Einstein radius, eased towards its target
     this.ripples = [];           // { x, y, age, amp }
     this.beta = 0;
+    this.approach = 1;           // the opening shot: 0 = 50× further out than the first station
+    this.warp = 0;               // warp navigation: 0 → 1, and the direction of travel
+    this.warpDir = 1;
+    this.warpTime = 0;
 
     // Shared by the star materials: time and the previous frame's camera (for light streaks)
     this.time = { myr: { value: 0 }, prevMyr: { value: 0 } };
@@ -701,6 +735,7 @@ export class GalaxyWorld {
         uDiskAxis: { value: DISK_AXIS }, uTime: { value: 0 }, uProjScale: { value: new Vector2(1, 1) },
         uAspect: { value: 1 }, uMargin: { value: 1 }, uCursor: { value: new Vector3() }, uBeta: { value: 0 },
         uRipples: { value: [new Vector4(), new Vector4(), new Vector4(), new Vector4()] },
+        uWarp: { value: 0 }, uWarpTime: { value: 0 },
       },
       defines: this.mobile ? { BH_STEPS: 140 } : {},
       vertexShader: FinalShader.vertexShader, fragmentShader: FinalShader.fragmentShader,
@@ -877,6 +912,16 @@ export class GalaxyWorld {
 
   setLensStrength(k) { this.lensStrength = k; }
 
+  // The opening shot: from far outside the Galaxy (where it is a point of light) to the first station
+  setApproach(k) { this.approach = k; }
+
+  // Warp navigation: k (0 → 1) pushes the camera towards 0.5 c and makes it fly faster;
+  // dir is +1 forwards (the chapters ahead), −1 back
+  setWarp(k, dir = 1) { this.warp = k; this.warpDir = dir; }
+
+  // How far the camera still has to go (station units), for arriving from a warp
+  get remaining() { return Math.abs(this.u - this.uSmooth) + Math.abs(this.finale - this.finaleSmooth) * 3; }
+
   // A gravitational wave from a point on the screen (CSS pixels); amp is the strain
   addRipple(x, y, amp) {
     if (this.reducedMotion) return;
@@ -960,8 +1005,10 @@ export class GalaxyWorld {
       this.finaleVelocity = 0;
     } else {
       // The camera has inertia: it follows the scroll position on a critically damped spring
-      [this.uSmooth, this.uVelocity] = followSpring(this.uSmooth, this.uVelocity, this.u, dt);
-      [this.finaleSmooth, this.finaleVelocity] = followSpring(this.finaleSmooth, this.finaleVelocity, this.finale, dt);
+      // (in a warp it flies faster)
+      const omega = OMEGA * (1 + 0.8 * this.warp);
+      [this.uSmooth, this.uVelocity] = followSpring(this.uSmooth, this.uVelocity, this.u, dt, omega);
+      [this.finaleSmooth, this.finaleVelocity] = followSpring(this.finaleSmooth, this.finaleVelocity, this.finale, dt, omega);
     }
     const f = this.finaleSmooth;
 
@@ -971,6 +1018,11 @@ export class GalaxyWorld {
     const { pos, target, fov, exposure } = this._pose(this.uSmooth);
     let fovNow = fov;
     const up = new Vector3(0, 1, 0);
+    if (this.approach < 1 && f === 0) {
+      // The opening shot: arriving from 50× further out, slowing as the Galaxy fills the view
+      const e = 1 - Math.pow(1 - clamp01(this.approach), 3);
+      pos.multiplyScalar(Math.exp(lerp(Math.log(50), 0, e)));
+    }
     if (f > 0) {
       // Fall into Sgr A*: logarithmic in distance, from 5 pc to just outside the photon sphere,
       // spiralling about the disk's axis as a body with angular momentum would; the camera
@@ -995,9 +1047,12 @@ export class GalaxyWorld {
     const lensTarget = this.cursorOn && f === 0 && !this.reducedMotion ? (this.mobile ? 0.04 : 0.05) * this.lensStrength : 0;
     this.lensRadius += (lensTarget - this.lensRadius) * (1 - Math.exp(-8 * dt));
     if (Math.abs(this.lensRadius - lensTarget) < 2e-4) this.lensRadius = lensTarget;
-    // Speed from the camera's flight between chapters, capped at a quarter of c
-    this.beta = this.reducedMotion || f > 0 ? 0 : 0.25 * Math.tanh(this.uVelocity * 0.7);
+    // Speed from the camera's flight between chapters, capped at a quarter of c; in a warp, up to 0.85 c
+    const cruise = 0.25 * Math.tanh(this.uVelocity * 0.7);
+    const warpBeta = 0.5 * this.warp * this.warpDir;
+    this.beta = this.reducedMotion || (f > 0 && !this.warp) ? 0 : (Math.abs(warpBeta) > Math.abs(cruise) ? warpBeta : cruise);
     if (Math.abs(this.beta) < 2e-3) this.beta = 0;
+    this.warpTime = this.warp > 0 ? this.warpTime + dt * this.warp : 0;
     this.ripples.forEach(r => { r.age += dt; });
     this.ripples = this.ripples.filter(r => r.age < 4);
 
@@ -1010,7 +1065,7 @@ export class GalaxyWorld {
     if (this.beta > 0) {
       const corner = Math.atan(halfTan * Math.hypot(1, cam.aspect));
       const seen = 2 * Math.atan(Math.sqrt((1 + this.beta) / (1 - this.beta)) * Math.tan(corner / 2));
-      margin = Math.min(Math.tan(seen) / Math.tan(corner), 1.6);
+      margin = Math.min(Math.tan(seen) / Math.tan(corner), this.warp > 0 ? 2 : 1.6);
     }
 
     // Two things can need drawing: the 3D scene (only when the camera has moved) and the final
@@ -1020,7 +1075,7 @@ export class GalaxyWorld {
     const sceneState = key([pos.x, pos.y, pos.z, quat.x, quat.y, quat.z, quat.w, fovNow, margin, this.ready, this.active]);
     const postState = key([this.intro, f, this.ready, lensing && f < 0.99 ? this.diskTime : 0,
       this.lensRadius, this.lensRadius ? this.cursor.x : 0, this.lensRadius ? this.cursor.y : 0, this.beta,
-      this.ripples.length ? this.timer.getElapsed() : 0]);
+      this.ripples.length ? this.timer.getElapsed() : 0, this.warp, this.warp > 0 ? this.warpTime : 0]);
     const state = sceneState + '|' + postState;
     // After moving frames (drawn at reduced resolution), one crisp frame once the camera has been
     // still for a moment (the pointer's lens and the waves don't count: they don't move the camera)
@@ -1113,6 +1168,8 @@ export class GalaxyWorld {
     fu.uAspect.value = window.innerWidth / window.innerHeight;
     fu.uCursor.value.set(this.cursor.x, this.cursor.y, this.lensRadius);
     fu.uBeta.value = this.beta;
+    fu.uWarp.value = this.warp;
+    fu.uWarpTime.value = this.warpTime;
     fu.uRipples.value.forEach((v, i) => {
       const r = this.ripples[i];
       if (r) v.set(r.x, r.y, r.age, r.amp); else v.set(0, 0, 0, 0);

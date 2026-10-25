@@ -54,6 +54,15 @@ html.lenis body {
     display: block;
 }
 
+/* Drawn ornaments (separator points, rules before labels) can't fall in with the text: as the
+   shredding begins they fade instead */
+.is-shredding .channel-list li + li::before,
+.is-shredding .eyebrow::before,
+.is-shredding .galactic-position span + span::before {
+    opacity: 0;
+    transition: opacity 0.6s var(--ease-out);
+}
+
 /* While the black hole shreds the last page, nothing clips the falling fragments */
 .is-shredding .reveal-mask,
 .is-shredding .code-window,
@@ -116,6 +125,18 @@ html.lenis body {
 .scroller {
     position: relative;
     z-index: 1;
+    transition: opacity 0.6s var(--ease-out);
+}
+
+/* Warp navigation: the page fades while the camera crosses the Galaxy (warp.js) */
+html.is-warping .scroller {
+    opacity: 0;
+    pointer-events: none;
+    transition-duration: 0.3s;
+}
+
+html.is-warping .chapter {
+    visibility: hidden;
 }
 
 
@@ -1049,53 +1070,78 @@ html.lenis body {
     outline-offset: 2px;
 }
 
-/* The catalogue entry: stays at the bottom of the screen while the chart is in view */
+/* The catalogue entry for the star under the pointer (or the last one tapped): no panel, just a
+   hairline and the record, joined to its star by a leader line */
 .skill-readout {
     position: relative;
-    bottom: 0;
-    z-index: 2;
-    min-height: 6.5rem;
-    margin-top: 2.5rem;
-    padding: 1.25rem 0 1.5rem;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    gap: 0 1.5rem;
+    align-items: start;
+    min-height: 7.5rem;
+    margin-top: 2.75rem;
+    padding-top: 1.25rem;
     border-top: 1px solid var(--w-hair);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 0.35rem;
+    transition: border-color var(--motion-quick) var(--ease-out);
 }
 
 .skill-readout.is-filled {
-    position: sticky;
-    border-top-color: var(--w-line);
-    background: rgba(3, 5, 10, 0.94);   /* opaque, not a backdrop blur: that would re-blur the live Galaxy every frame */
+    border-top-color: var(--w-line-strong);
 }
 
 .skill-readout-empty {
-    font-size: var(--text-sm);
+    grid-column: 1 / -1;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.06em;
     color: var(--w-muted);
 }
 
-.skill-readout-head {
+.skill-entry-id {
+    padding-top: 0.55rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.06em;
+    color: var(--w-warm);
+    font-variant-numeric: tabular-nums;
+}
+
+.skill-entry-head {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 0.25rem 0.9rem;
+    justify-content: space-between;
+    gap: 0.25rem 1.5rem;
+    margin-bottom: 0.9rem;
 }
 
-.skill-readout-head .cat-id {
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    color: var(--w-warm);
-}
-
-.skill-readout-name {
+.skill-entry-name {
     font-family: var(--font-display);
-    font-size: var(--text-xl);
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
     font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
     color: var(--w-ink);
 }
 
-.skill-readout-cat {
+.skill-entry-cat {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--w-muted);
+}
+
+/* The record: label over value, in a row, like an instrument's readout */
+.skill-entry-data {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem 2.5rem;
+}
+
+.skill-entry-data dt {
+    margin-bottom: 0.2rem;
     font-family: var(--font-mono);
     font-size: var(--text-xs);
     letter-spacing: 0.12em;
@@ -1103,10 +1149,60 @@ html.lenis body {
     color: var(--w-muted);
 }
 
-.skill-readout-body {
+.skill-entry-data dd {
     font-size: var(--text-base);
-    line-height: 1.6;
-    color: var(--w-muted);
+    color: var(--w-text);
+    font-variant-numeric: tabular-nums;
+}
+
+.skill-entry-note {
+    font-size: var(--text-base);
+    color: var(--w-text);
+}
+
+/* The leader line, plotted from the star down to its entry */
+.skill-leader {
+    position: absolute;
+    top: 0;
+    left: 0;
+    overflow: visible;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--motion-quick) var(--ease-out);
+}
+
+.skill-leader.is-shown {
+    opacity: 1;
+}
+
+.skill-leader path {
+    fill: none;
+    stroke: var(--w-accent);
+    stroke-width: 1;
+    stroke-opacity: 0.7;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    filter: drop-shadow(0 0 3px rgba(202, 218, 255, 0.5));
+    transition: stroke-dashoffset 0.55s var(--ease-out);
+}
+
+.skill-leader circle {
+    fill: var(--w-accent);
+}
+
+@media (max-width: 700px) {
+    .skill-readout {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.35rem;
+    }
+
+    .skill-entry-id {
+        padding-top: 0;
+    }
+
+    .skill-entry-data {
+        gap: 0.75rem 1.75rem;
+    }
 }
 
 .skill-readout-role {
@@ -1776,6 +1872,237 @@ html.lenis body {
     }
 }
 
+
+/* ── Contact: one centred column — the last thing before the black hole, which waits at the
+   centre of the screen. The address, two actions, a row of channels; the form on request ── */
+#portal-contact .content {
+    text-align: center;
+}
+
+#portal-contact .section-head {
+    margin-inline: auto;
+}
+
+#portal-contact .eyebrow,
+#portal-contact .galactic-position {
+    justify-content: center;
+}
+
+#portal-contact .section-subtitle {
+    margin-inline: auto;
+}
+
+#portal-contact input,
+#portal-contact textarea,
+#portal-contact .btn-primary {
+    text-shadow: var(--w-shadow);
+}
+
+.contact-primary {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.4rem;
+    margin-bottom: 3.5rem;
+}
+
+.contact-address {
+    font-family: var(--font-display);
+    font-size: clamp(1.3rem, 5.4vw, 4rem);
+    font-weight: 300;
+    line-height: 1.1;
+    letter-spacing: -0.035em;
+    color: var(--w-ink);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+    background: linear-gradient(var(--w-accent), var(--w-accent)) center bottom / 0 1px no-repeat;
+    transition: background-size 0.6s var(--ease-out), color var(--motion-quick) var(--ease-out);
+}
+
+.contact-address:hover,
+.contact-address:focus-visible {
+    color: var(--w-accent-hover);
+    background-size: 100% 1px;
+}
+
+.contact-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem 2.5rem;
+}
+
+.contact-action {
+    padding: 0.3rem 0;
+    border: 0;
+    background: none;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--w-accent-text);
+    text-shadow: inherit;
+    cursor: pointer;
+    transition: color var(--motion-quick) var(--ease-out);
+}
+
+.contact-action:hover {
+    color: var(--w-ink);
+}
+
+.contact-action.is-done {
+    color: var(--w-warm);
+}
+
+/* Channels: one centred line of names, separated by thin points */
+.channel-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.6rem 0;
+    list-style: none;
+}
+
+.channel-list li {
+    display: flex;
+    align-items: center;
+}
+
+.channel-list li + li::before {
+    content: '';
+    width: 3px;
+    height: 3px;
+    margin: 0 1.1rem;
+    border-radius: 50%;
+    background: var(--w-line-strong);
+}
+
+#portal-contact .channel {
+    padding: 0.25rem 0;
+    border: 0;
+    background: none;
+    color: var(--w-text);
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: 400;
+    text-decoration: none;
+    text-shadow: inherit;
+    cursor: pointer;
+    box-shadow: inset 0 -1px 0 transparent;
+    transition: color var(--motion-quick) var(--ease-out), box-shadow var(--motion-quick) var(--ease-out);
+}
+
+#portal-contact .channel:hover,
+#portal-contact .channel:focus-visible {
+    color: var(--w-ink);
+    box-shadow: inset 0 -1px 0 var(--w-accent);
+}
+
+/* The résumé: the one warm (4,000 K) name */
+#portal-contact .channel--warm {
+    color: var(--w-warm);
+}
+
+#portal-contact .channel--warm:hover {
+    color: var(--w-warm);
+    box-shadow: inset 0 -1px 0 var(--w-warm);
+}
+
+/* The form, on request: a narrow centred column of lines to write on */
+#portal-contact .contact-form {
+    max-width: 32rem;
+    margin: 4rem auto 0;
+    gap: 1.6rem;
+    text-align: left;
+}
+
+#portal-contact .contact-form[hidden] {
+    display: none;
+}
+
+#portal-contact .form-group input,
+#portal-contact .form-group textarea {
+    padding: 0.55rem 0;
+    border: 0;
+    border-bottom: 1px solid var(--w-line-strong);
+    border-radius: 0;
+    background: none;
+    font-size: var(--text-md);
+}
+
+#portal-contact .form-group textarea {
+    resize: none;
+    min-height: 5.5rem;
+}
+
+#portal-contact .form-group input:focus,
+#portal-contact .form-group textarea:focus {
+    border-bottom-color: var(--w-accent);
+    box-shadow: 0 1px 0 var(--w-accent);
+}
+
+#portal-contact .form-group input.invalid,
+#portal-contact .form-group textarea.invalid {
+    border-bottom-color: var(--w-error);
+}
+
+#portal-contact .submit-btn {
+    align-self: center;
+    width: auto;
+    margin-top: 0.5rem;
+    padding: 0.4rem 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: inset 0 -1px 0 var(--w-accent);
+    color: var(--w-accent-text);
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: 500;
+}
+
+#portal-contact .submit-btn:hover {
+    color: var(--w-ink);
+    box-shadow: inset 0 -1px 0 var(--w-ink);
+}
+
+#portal-contact .btn-loader {
+    border-color: var(--w-line-strong);
+    border-top-color: var(--w-accent);
+}
+
+/* The send log: a few quiet mono lines, centred under the button */
+#portal-contact .terminal-body {
+    min-height: 0;
+    max-height: 7.5rem;
+    padding: 0;
+    overflow-y: auto;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: 1.6;
+    color: var(--w-muted);
+    text-align: center;
+    scrollbar-width: none;
+}
+
+#portal-contact .terminal-line {
+    justify-content: center;
+    margin-bottom: 0.1rem;
+}
+
+@media (max-width: 560px) {
+    /* The row wraps here: spacing instead of points, so no line starts with one */
+    .channel-list {
+        gap: 0.5rem 1.5rem;
+    }
+
+    .channel-list li + li::before {
+        content: none;
+    }
+
+    #portal-contact .channel {
+        font-size: var(--text-md);
+    }
+}
 
 /* =============================================
    Focus

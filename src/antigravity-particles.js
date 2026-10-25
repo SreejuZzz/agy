@@ -187,12 +187,15 @@ const RENDER_VERT = /* glsl */`
   uniform float uParticleScale;
   uniform float uPixelRatio;
   uniform int   uColorScheme;
+  uniform vec2  uRingPos;
+  uniform float uCollapse;     // 0 → 1: the ring falls in on itself (the opening shot)
 
   varying vec4  vSeeds;
   varying float vVelocity;
   varying vec2  vLocalPos;
   varying vec2  vScreenPos;
   varying float vScale;
+  varying float vHeat;
 
   void main() {
     vec4 pos  = texture2D(uPosition, uv);
@@ -201,11 +204,30 @@ const RENDER_VERT = /* glsl */`
     vScale    = pos.z;
     vLocalPos = pos.xy;
 
-    vec4 viewSpace = modelViewMatrix * vec4(vec3(pos.xy, 0.0), 1.0);
+    // Collapse: every particle falls freely onto the ring's centre from rest, on the radial
+    // cycloid r = r0 (1 + cos η)/2 with η + sin η = π s. Free-fall time grows as r0^1.5, so the
+    // inner particles arrive first; compressed, the gas heats up (vHeat → white-hot)
+    vec2 p = pos.xy;
+    vHeat = 0.0;
+    if (uCollapse > 0.0) {
+      vec2 d = p - uRingPos;
+      float r = max(length(d), 0.02);
+      float s = clamp(uCollapse * pow(0.34 / r, 1.5), 0.0, 1.0);   // the outermost visible particles land last, at uCollapse = 1
+      float eta = 3.14159265 * s;
+      for (int i = 0; i < 5; i++) {
+        eta -= (eta + sin(eta) - 3.14159265 * s) / (1.0 + cos(eta) + 1e-3);
+        eta = clamp(eta, 0.0, 3.14159265);
+      }
+      float f = (1.0 + cos(eta)) * 0.5;
+      p = uRingPos + d * f;
+      vHeat = 1.0 - f;
+    }
+
+    vec4 viewSpace = modelViewMatrix * vec4(vec3(p, 0.0), 1.0);
     gl_Position    = projectionMatrix * viewSpace;
     vScreenPos     = gl_Position.xy;
 
-    gl_PointSize = (vScale * 5.5) * (uPixelRatio * 0.5) * uParticleScale;
+    gl_PointSize = (vScale * 5.5) * (uPixelRatio * 0.5) * uParticleScale * (1.0 + 2.5 * vHeat * vHeat);   // glowing as it heats
   }
 `;
 
@@ -217,6 +239,7 @@ const RENDER_FRAG = /* glsl */`
   varying vec2  vLocalPos;
   varying float vScale;
   varying float vVelocity;
+  varying float vHeat;
 
   uniform vec3  uColor1;
   uniform vec3  uColor2;
@@ -264,12 +287,16 @@ const RENDER_FRAG = /* glsl */`
 
     float rounded = sdRoundBox(uv, vec2(0.5, 0.2), vec4(0.25));
     rounded = smoothstep(0.1, 0.0, rounded);
+    // Heated, each particle becomes a soft round glow (the collapsed point is a star, not a tile)
+    float glow = pow(smoothstep(0.5, 0.0, length(uv)), 1.6);
+    rounded = mix(rounded, glow, smoothstep(0.3, 0.9, vHeat));
 
     float a = uAlpha * rounded * smoothstep(0.1, 0.2, vScale);
     if (a < 0.01) discard;
 
     col = clamp(col, 0.0, 1.0);
     col = mix(col, col * clamp(vVelocity, 0.0, 1.0), float(uColorScheme));
+    col = mix(col, vec3(1.0, 0.94, 0.86), vHeat * vHeat);   // white-hot as it collapses
 
     gl_FragColor = vec4(col, clamp(a, 0.0, 1.0));
   }
@@ -513,6 +540,7 @@ export class AntigravityParticles {
         uParticleScale:{ value: this._getParticleScale() },
         uPixelRatio:   { value: this.pixelRatio },
         uColorScheme:  { value: 1 },   // velocity-mix mode — best with vivid light palette
+        uCollapse:     { value: 0 },
       },
       vertexShader:   RENDER_VERT,
       fragmentShader: RENDER_FRAG,
@@ -588,6 +616,11 @@ export class AntigravityParticles {
     this.paused = paused;
   }
 
+  // 0 → 1: the ring collapses into a point at the centre of the screen (the opening shot)
+  setCollapse(k) {
+    this.collapse = k;
+  }
+
   _loop() {
     requestAnimationFrame(() => this._loop());
     if (this.paused) return;
@@ -635,12 +668,16 @@ export class AntigravityParticles {
     // Particle scale (recomputed each frame in case of resize)
     const particleScale = this._getParticleScale();
 
+    // While it collapses the ring is drawn to the centre of the screen, where the Galaxy will be
+    const collapse = this.collapse || 0;
+    const ringPos = this._ringPos.clone().multiplyScalar(1 - Math.min(collapse * 2, 1));
+
     // ── GPGPU sim pass ────────────────────────────────────────────────
     this._simMaterial.uniforms.uPosition.value         = this._everRendered ? this._rt1.texture : this._posTex;
     this._simMaterial.uniforms.uTime.value             = elapsed;
     this._simMaterial.uniforms.uDeltaTime.value        = dt;
     this._simMaterial.uniforms.uRingRadius.value       = ringRadius;
-    this._simMaterial.uniforms.uRingPos.value.copy(this._ringPos);
+    this._simMaterial.uniforms.uRingPos.value.copy(ringPos);
     this._simMaterial.uniforms.uRingWidth.value        = this.ringWidth;
     this._simMaterial.uniforms.uRingWidth2.value       = this.ringWidth2;
     this._simMaterial.uniforms.uRingDisplacement.value = this.ringDisplacement;
@@ -653,8 +690,9 @@ export class AntigravityParticles {
     // ── Render pass ───────────────────────────────────────────────────
     this._renderMaterial.uniforms.uPosition.value      = this._everRendered ? this._rt2.texture : this._posTex;
     this._renderMaterial.uniforms.uTime.value          = elapsed;
-    this._renderMaterial.uniforms.uRingPos.value.copy(this._ringPos);
+    this._renderMaterial.uniforms.uRingPos.value.copy(ringPos);
     this._renderMaterial.uniforms.uParticleScale.value = particleScale;
+    this._renderMaterial.uniforms.uCollapse.value      = collapse;
 
     this.renderer.autoClear = false;
     this.renderer.clear();
